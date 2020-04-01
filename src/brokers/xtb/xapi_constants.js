@@ -17,6 +17,7 @@
 const XAPIConstants = Object.freeze({
   ERROR_PREFIX: 'ERROR_',
   LOGIN: 'login',
+  LOGOUT: 'logout',
   STREAM_BALANCE: 'streamBalance',
   STREAM_CANDLES: 'streamCandles',
   STREAM_KEEP_ALIVE: 'streamKeepAlive',
