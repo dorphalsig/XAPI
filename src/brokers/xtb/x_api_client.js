@@ -14,22 +14,20 @@
  *    limitations under the License.
  */
 
-const {EventEmitter, on, once} = require('events');
-const Tls = require('tls');
-const config = require('./config');
-const XAPIConstants = require('./xapi_constants');
+import EventTarget2 from 'src/events/events';
+import config from './config';
+import XAPIConstants from './xapi_constants';
 
 /**
  * Javascript Implementation of the API to call remote operations on the XTB/X
  * Open Hub xStation 5 platform
  * @version 2.5.0
  * @see http://developers.xstore.pro/documentation/2.5.0
- * @extends {EventEmitter}
  * @todo define a maximum amount of messages/s that can go in a single
  *     streaming socket and then have the sockets identify if a new one must be
  *     opened
  */
-const XApiClient = class {
+class XApiClient {
   /**
    * @readonly
    * @enum {number}
@@ -102,26 +100,22 @@ const XApiClient = class {
    */
   /** @type {boolean} */
   isLoggedIn = false;
-  /** @type {WeakMap<TLSSocket,string>} */
+  /** @type {WeakMap<WebSocket,string>} */
   #data;
   /**
-   * @type module:events.EventEmitter.EventEmitter
+   * @type EventTarget2
    */
   #emitter;
   /** @type {string} */
   #password;
-  /** @type {number} */
-  #port;
-  /** @type {Map<String,TLSSocket>} */
+  /** @type {string} */
+  #endpoint;
+  /** @type {string} */
+  #streamEndpoint;
+  /** @type {Map<String,WebSocket>} */
   #sockets;
-  /** @type {number} */
-  #streamPort;
   /** @type {string} */
   #streamSessionId;
-  /**
-   * @type {Set<string>}
-   */
-  #streamingCommands;
   /** @type {string} */
   #username;
 
@@ -134,11 +128,10 @@ const XApiClient = class {
   constructor(username, password, isDemo) {
     this.#username = username;
     this.#password = password;
-    this.#emitter = new EventEmitter();
-    this.#port = (isDemo) ? config.DEMO_PORT : config.LIVE_PORT;
-    this.#streamPort = (isDemo) ?
-        config.DEMO_STREAM_PORT :
-        config.LIVE_STREAM_PORT;
+    this.#emitter = new EventTarget2();
+    this.#endpoint = (isDemo) ? config.DEMO_ENDPOINT : config.LIVE_ENDPOINT;
+    this.#streamEndpoint = (isDemo) ? config.DEMO_ENDPOINT_STREAM :
+        config.LIVE_ENDPOINT_STREAM;
     this.#sockets = new Map();
     this.#data = new WeakMap();
   }
@@ -149,6 +142,8 @@ const XApiClient = class {
    * @param {string} customTag
    * @param {string} operationName
    * @param {Object} args the operation parameters
+   * @return {Object}
+   * @private
    * */
   async _callOperation(customTag, operationName, args = {}) {
     this._checkLoggedIn();
@@ -157,9 +152,7 @@ const XApiClient = class {
       payload.arguments = args;
     }
     this.#sockets.get('operation').write(JSON.stringify(payload));
-    // noinspection JSCheckFunctionSignatures
-    const [response] = await once(this.#emitter, customTag);
-    return response;
+    return (await this.#emitter.once(operationName)).detail;
   }
 
   /**
@@ -177,33 +170,33 @@ const XApiClient = class {
    * @param  {string} name the name of the socket, this will be used to route
    * the async messages. Basically each streaming message has its own dedicated
    *     socket
-   * @param {number} port port to which to connect
-   * @return {TLSSocket}
+   * @param {string} endpoint WSS endpoint
+   * @return {WebSocket}
    * @private
    */
-  _connectSocket(name, port = this.#streamPort) {
+  _connectSocket(name, endpoint = this.#endpoint) {
     if (this.#sockets.has(name)) {
       console.log(`socket ${name} already exists. Doing nothing`);
       return this.#sockets.get(name);
     }
-    const socket = Tls.connect(port, config.ENDPOINT);
-    socket.setEncoding('utf8');
-    socket.setKeepAlive(true, 500);
+    const socket = new WebSocket(endpoint);
 
-    socket.once('tlsClientError', (data) => {
-      throw new Error(data);
-    });
-
-    socket.once('close', () => {
+    socket.onclose = (function(closeEvent) {
       console.log(`Socket ${name} disconnected`);
-      const socket = this.#sockets.get(name);
+      if (closeEvent.code !== 1000) {
+        throw new Error(
+            'The server unexpectedly closed the connection.' +
+            `Error code ${closeEvent.code}. More info can be found in` +
+            'https://www.iana.org/assignments/websocket/websocket.xml#close-code-number');
+      }
+      const socket = closeEvent.currentTarget;
       this.#sockets.delete(name);
       this.#data.delete(socket);
-    });
+    }).bind(this);
 
-    socket.on('data', (rcvd) => {
-      this._parseResponse(rcvd, socket);
-    });
+    socket.onmessage = (function(messageEvent) {
+      this._parseResponse(messageEvent.data, messageEvent.source);
+    }).bind(this);
 
     this.#sockets.set(name, socket);
     this.#data.set(socket, '');
@@ -214,13 +207,13 @@ const XApiClient = class {
    * parses the response and publishes an event so the corresponding
    * handler can take care of it
    * @param {string} rcvd message
-   * @param {TLSSocket} socket socket which received the message
+   * @param {WebSocket} socket socket which received the message
+   * @private
    */
   _parseResponse(rcvd, socket) {
     const responses = (this.#data.get(socket) + rcvd).trim().split('\n\n');
     // API messages are always terminated with two newlines
-    const remainder = (rcvd.lastIndexOf('\n\n') === rcvd.length - 2) ?
-        '' :
+    const remainder = (rcvd.lastIndexOf('\n\n') === rcvd.length - 2) ? '' :
         responses.pop();
     this.#data.set(socket, remainder);
 
@@ -228,14 +221,16 @@ const XApiClient = class {
       const responseObj = JSON.parse(response);
       if (responseObj.status) {
         const returnData = responseObj.customTag === XAPIConstants.LOGIN ?
-            responseObj.streamSessionId :
-            responseObj.returnData;
-        this.#emitter.emit(responseObj.customTag, returnData);
+            responseObj.streamSessionId : responseObj.returnData;
+        this.#emitter.dispatchEvent(
+            new CustomEvent(responseObj.customTag, {detail: returnData}));
         continue;
       }
-      this.#emitter.emit(XAPIConstants.ERROR_PREFIX + responseObj.customTag,
-          responseObj);
-      console.log(`Error: ${responseObj.errorCode} ${responseObj.errorDescr}`);
+      this.#emitter.dispatchEvent(
+          new CustomEvent(XAPIConstants.ERROR_PREFIX + responseObj.customTag,
+              {detail: responseObj}));
+      console.warn(`Call with customTag ${responseObj.customTag}` +
+          `Failed: ${responseObj.errorDescr} (code: ${responseObj.errorCode})`);
     }
   }
 
@@ -263,7 +258,7 @@ const XApiClient = class {
    * generic method to stop streaming a command
    * @param {string} customTag
    * @param {string} stopCommand
-   * @param {string} args
+   * @param {object} args
    * @return {boolean}
    * @private
    */
@@ -271,15 +266,17 @@ const XApiClient = class {
     if (!this.#sockets.has(customTag)) {
       return false;
     }
+    this.#emitter.off(customTag);
     const socket = this.#sockets.get(customTag);
     const payload = {
       command: stopCommand,
       streamSessionId: this.#streamSessionId,
     };
-    if (Object.keys(args).length !== 0 || args.constructor !== Object) {
+    if (Object.keys(args).length > 0) {
       Object.assign(payload, args);
     }
     socket.write(JSON.stringify(payload));
+    socket.close();
     this.#sockets.delete(customTag);
     return true;
   }
@@ -291,8 +288,9 @@ const XApiClient = class {
    * @param {string} customTag
    * @param {string} command
    * @param {Object} args the operation parameters
-   * @return {boolean} false if there is an already active subscription to the
-   *     stream, true once its finished
+   * @return {boolean} false if there is an already active subscription,
+   * true once its finished
+   * @private
    */
   async* _streamOperation(customTag, command, args = {}) {
     this._checkLoggedIn();
@@ -300,25 +298,17 @@ const XApiClient = class {
     if (this.#sockets.has(customTag)) {
       return false;
     }
-
+    const socket = this._connectSocket(customTag, this.#streamEndpoint);
+    this.#sockets.set(customTag, socket);
     const payload = {command: command, customTag: customTag};
     if (Object.keys(args).length !== 0 || args.constructor !== Object) {
       Object.assign(payload, args);
     }
-
-    const socket = this._connectSocket(customTag, this.#streamPort);
-    this.#sockets.set(customTag, socket);
     socket.write(JSON.stringify(payload));
-    this.#streamingCommands.add(customTag);
-
-    while (this.#streamingCommands.has(customTag)) {
-      const response = await on(this.#emitter, customTag);
-      yield response;
+    for await(let triggeredEvent of this.#emitter.on(customTag)) {
+      yield triggeredEvent.detail;
     }
-
-    socket.removeAllListeners();
-    socket.destroy();
-    this.#sockets.delete(customTag);
+    return true;
   }
 
   /**
@@ -584,7 +574,7 @@ const XApiClient = class {
    */
   async login() {
     const errorEventName = XAPIConstants.ERROR_PREFIX + XAPIConstants.LOGIN;
-    this._connectSocket('operation', this.#port);
+    this._connectSocket('operation', this.#endpoint);
     this.#emitter.once(errorEventName, (response) => {
       throw new Error(
           `Could not log in: ${response.errorDescr} (${response.errorCode})`);
@@ -597,11 +587,10 @@ const XApiClient = class {
     };
 
     this.#sockets.get('operation').write(JSON.stringify(payload));
-    // noinspection JSCheckFunctionSignatures
-    [this.#streamSessionId] = await once(this.#emitter, XAPIConstants.LOGIN);
+
+    this.#streamSessionId = (await this.#emitter.once(
+        XAPIConstants.LOGIN)).detail;
     this.isLoggedIn = true;
-    this.#emitter.removeAllListeners(
-        XAPIConstants.ERROR_PREFIX + XAPIConstants.LOGIN);
     return true;
   }
 
@@ -609,12 +598,10 @@ const XApiClient = class {
    * logs out and closes all the sockets
    */
   logout() {
-    this.#emitter.removeAllListeners();
     this._callOperation(XAPIConstants.LOGOUT, 'logout');
     this.isLoggedIn = false;
     this.#sockets.forEach((socket, key) => {
-      socket.removeAllListeners();
-      socket.destroy();
+      socket.close();
       this.#sockets.delete(key);
     });
     this.#streamSessionId = undefined;
@@ -694,13 +681,8 @@ const XApiClient = class {
    * they are available in the system.
    * @yields {Balance}
    */
-  async* streamBalance() {
-    const command = 'getBalance';
-    const customTag = XAPIConstants.STREAM_BALANCE;
-
-    for await (const balance of this._streamOperation(customTag, command)) {
-      yield balance;
-    }
+  streamBalance() {
+    return this._streamOperation('getBalance', XAPIConstants.STREAM_BALANCE);
   }
 
   /**
@@ -709,15 +691,9 @@ const XApiClient = class {
    * @param {string} symbol
    * @yields {Candle}
    */
-  async* streamCandles(symbol) {
-    const command = 'getCandles';
-    const customTag = XAPIConstants.STREAM_BALANCE;
-    const params = {symbol: symbol};
-
-    for await (const balance of this._streamOperation(customTag, command,
-        params)) {
-      yield balance;
-    }
+  streamCandles(symbol) {
+    return this._streamOperation('getCandles', XAPIConstants.STREAM_CANDLES,
+        {symbol: symbol});
   }
 
   /**
@@ -725,12 +701,8 @@ const XApiClient = class {
    * A new 'keep alive' message is sent by the API every 3 seconds
    * @fires XAPIConstants#.STREAM_KEEP_ALIVE
    */
-  async* streamKeepAlive() {
-    const command = 'keepAlive';
-    const customTag = XAPIConstants.STREAM_KEEP_ALIVE;
-    for await (const balance of this._streamOperation(customTag, command)) {
-      yield balance;
-    }
+  streamKeepAlive() {
+    return this._streamOperation('keepAlive', XAPIConstants.STREAM_KEEP_ALIVE);
   }
 
   /**
@@ -738,11 +710,7 @@ const XApiClient = class {
    * @return {News}
    */
   async* streamNews() {
-    for await (const response of this._streamOperation(
-        XAPIConstants.STREAM_NEWS,
-        'getNews')) {
-      yield response;
-    }
+    return this._streamOperation(XAPIConstants.STREAM_NEWS, 'getNews');
   }
 
   /**
@@ -752,23 +720,16 @@ const XApiClient = class {
    * traffic. It is recommended that any application that does not execute
    * other commands, should call this command at least once every 10 minutes.
    */
-  async* streamPing() {
-    for await (const response of this._streamOperation(
-        XAPIConstants.STREAM_PING,
-        'ping')) {
-      yield response;
-    }
+  streamPing() {
+    return this._streamOperation(XAPIConstants.STREAM_PING, 'ping');
   }
 
   /**
    * Subscribes to profits
    * @yields Profit
    */
-  async* streamProfits() {
-    for await (const response of this._streamOperation(
-        XAPIConstants.STREAM_PROFITS, 'getProfits')) {
-      yield response;
-    }
+  streamProfits() {
+    return this._streamOperation(XAPIConstants.STREAM_PROFITS, 'getProfits');
   }
 
   /**
@@ -785,15 +746,10 @@ const XApiClient = class {
    * @yields TickPrice
    */
   async* streamTickPrices(symbol, {minArrivalTime = 0, maxLevel}) {
-    const params = {
-      minArrivalTime: minArrivalTime, symbol: symbol, maxLevel: maxLevel,
-    };
-    const customTag = `${XAPIConstants.STREAM_PROFITS}_${symbol}`;
-    for await (const response of this._streamOperation(customTag,
-        'getTickPrices',
-        params)) {
-      yield response;
-    }
+    return this._streamOperation(XAPIConstants.STREAM_TICK_PRICES,
+        'streamTickPrices', {
+          minArrivalTime: minArrivalTime, symbol: symbol, maxLevel: maxLevel,
+        });
   }
 
   /**
@@ -803,12 +759,8 @@ const XApiClient = class {
    * available, the order in which they are received is not guaranteed.
    * @fires XAPIConstants#.STREAM_TRADE_STATUS
    */
-  async* streamTradeStatus() {
-    for await (const response of this._streamOperation(
-        XAPIConstants.STREAM_TRADE_STATUS,
-        'getTradeStatus')) {
-      yield response;
-    }
+  streamTradeStatus() {
+    this._streamOperation(XAPIConstants.STREAM_TRADE_STATUS, 'getTradeStatus');
   }
 
   /**
@@ -819,11 +771,8 @@ const XApiClient = class {
    * @see http://developers.xstore.pro/documentation/2.5.0#streamTrades
    * @yields Trade
    */
-  async* streamTrades() {
-    for await (const response of this._streamOperation(
-        XAPIConstants.STREAM_TRADES, 'getTrades')) {
-      yield response;
-    }
+  streamTrades() {
+    return this._streamOperation(XAPIConstants.STREAM_TRADES, 'getTrades');
   }
 
   /**
@@ -885,6 +834,6 @@ const XApiClient = class {
     response.price = response.ask;
     return response;
   }
-};
+}
 
-module.exports = XApiClient;
+export default XApiClient;

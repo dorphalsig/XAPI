@@ -13,25 +13,23 @@
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
  */
-module.exports = Object.freeze({
-  ENDPOINT: 'xapi.xtb.com',
-  LIVE_PORT: 5112,
-  LIVE_STREAM_PORT: 5113,
-  DEMO_PORT: 5124,
-  DEMO_STREAM_PORT: 5125,
-  /* According to the docs, max is 50, but one socket is used for
-   non-streaming commands*/
+export default Object.freeze({
+  LIVE_ENDPOINT: 'wss://ws.xtb.com/real',
+  LIVE_ENDPOINT_STREAM: 'wss://ws.xtb.com/realStream',
+  DEMO_ENDPOINT: 'wss://ws.xtb.com/demo',
+  DEMO_ENDPOINT_STREAM: 'wss://ws.xtb.com/realStream',
+  // non-streaming commands
   MAX_STREAM_SOCKETS: 49,
   INITIAL_POOL_SIZE: 5,
-  POOL_STEP_INCREASE: 5,
   /* number of incoming messages / second after which another
-   <POOL_STEP_INCREASE> sockets will be opened*/
+   <POOL_STEP_INCREASE> sockets will be opened
+   */
+  POOL_STEP_INCREASE: 5,
+  /* number of incoming messages / second after which
+  sockets with not enough traffic will be closed and merged
+ MIN_MESSAGES: 20, // interval (in seconds) in which the socket merge will
+  take place */
   MAX_MESSAGES: 100,
-  /* number of incoming messages / second after which sockets with not
-   enough traffic will be closed and  merged*/
-  MIN_MESSAGES: 20,
-  /* interval (in seconds) in which the socket merge will take place*/
   SOCKET_MERGE_INTERVAL: 10,
 });
-module.exports;
 
