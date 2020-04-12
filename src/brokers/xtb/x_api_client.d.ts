@@ -448,7 +448,6 @@ export default class XApiClient {
      * other commands, should call this command at least once every 10 minutes.
      */
     streamPing(): AsyncGenerator<any, void, unknown>;
-
     /**
      * Subscribes to profits
      * @yields Profit
@@ -460,7 +459,6 @@ export default class XApiClient {
      * @return {AsyncGenerator<News>}
      */
     streamNews(): AsyncGenerator<News, any, any>;
-
     /**
      * Allows to get status for sent trade requests in real-time, as soon as it
      * is
@@ -469,7 +467,6 @@ export default class XApiClient {
      * @fires XAPIConstants#.STREAM_TRADE_STATUS
      */
     streamTradeStatus(): void;
-
     /**
      * Establishes subscription for user trade status data and allows to obtain
      * the relevant information in real-time, as soon as it is available in the
