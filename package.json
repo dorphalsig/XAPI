@@ -43,8 +43,5 @@
       "browser": false,
       "es6": true
     }
-  },
-  "dependencies": {
-    "tsc": "^1.20150623.0"
   }
 }
