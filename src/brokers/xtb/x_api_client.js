@@ -941,6 +941,9 @@ export default class XApiClient {
  * @property {?number} type type (only in streamTrades)
  * @property {number} volume Volume in lots
  * @property {?number} timestamp Timestamp (only in getTrades)
+ * @property {number} nominalValue
+ * @property {number} spread
+ * @property {number} taxes
  */
 
 /**

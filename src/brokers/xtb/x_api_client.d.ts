@@ -170,8 +170,6 @@ export default class XApiClient {
      * @return {Promise<Calendar[]>}
      */
     getCalendar(): Promise<Calendar[]>;
-    #private;
-
     /**
      * Returns chart info, from start date to the current time.
      * Note: streamCandles is the preferred way of retrieving current candle data.
@@ -201,7 +199,7 @@ export default class XApiClient {
         /** 30 days */
         PERIOD_MN1: number;
     }>, start: number, symbol: string): Promise<RateInfoRecord[]>;
-
+    #private;
     /**
      * Returns calculation of commission and rate of exchange.
      * The value is calculated as expected value, and therefore might not be
@@ -376,12 +374,10 @@ export default class XApiClient {
      * @param {string} symbol
      */
     stopStreamTickPrices(symbol: string): void;
-
     /**
      * stops streaming trades status
      */
     stopStreamTradeStatus(): void;
-
     /**
      * stops streaming trades
      */
@@ -424,7 +420,6 @@ export default class XApiClient {
         /** 30 days */
         PERIOD_MN1: number;
     }>, symbol: string, ticks?: number): Promise<RateInfoRecord[]>;
-
     /**
      * Subscribes to API chart candles. The interval of every candle is 1 minute.
      * A new candle arrives every minute.
@@ -432,7 +427,6 @@ export default class XApiClient {
      * @yields {Candle}
      */
     streamCandles(symbol: string): AsyncGenerator<any, void, unknown>;
-
     /**
      * Subscribes to 'keep alive' messages.
      * A new 'keep alive' message is sent by the API every 3 seconds
@@ -456,16 +450,16 @@ export default class XApiClient {
     streamPing(): AsyncGenerator<any, void, unknown>;
 
     /**
-     * Subscribes to news.
-     * @return {AsyncGenerator<News>}
-     */
-    streamNews(): AsyncGenerator<News, any, any>;
-
-    /**
      * Subscribes to profits
      * @yields Profit
      */
     streamProfits(): AsyncGenerator<any, void, unknown>;
+
+    /**
+     * Subscribes to news.
+     * @return {AsyncGenerator<News>}
+     */
+    streamNews(): AsyncGenerator<News, any, any>;
 
     /**
      * Allows to get status for sent trade requests in real-time, as soon as it
@@ -518,7 +512,6 @@ export default class XApiClient {
         MODIFY: number;
         DELETE: number;
     }>, volume: number): Promise<Order>;
-
     /**
      * Returns current transaction status. At any time of transaction processing
      * client might check the status of transaction on server side. In order to
@@ -641,8 +634,8 @@ export type TickPrice = {
      */
     ask: number;
     /**
-     * Number of available lots to buy at given price or
-     * null if not applicable
+     * Number of available lots to buy at given price
+     * or null if not applicable
      */
     askVolume: number;
     /**
@@ -650,8 +643,8 @@ export type TickPrice = {
      */
     bid: number;
     /**
-     * Number of available lots to buy at given price or
-     * null if not applicable
+     * Number of available lots to buy at given price
+     * or null if not applicable
      */
     bidVolume: number;
     /**
@@ -667,7 +660,8 @@ export type TickPrice = {
      */
     low: number;
     /**
-     * Source of price, detailed description
+     * Source of price, detailed
+     * description
      * below
      */
     quoteId: Readonly<{
@@ -729,7 +723,8 @@ export type Trade = {
      */
     commission: number | null;
     /**
-     * The value the customer may provide in order
+     * The value the customer may provide in
+     * order
      * to retrieve it later.
      */
     customComment: string | null;
@@ -766,12 +761,13 @@ export type Trade = {
      */
     order2: number;
     /**
-     * Position number (if type is 0 and 2) or transaction
-     * parameter (if type is 1)
+     * Position number (if type is 0 and 2) or
+     * transaction parameter (if type is 1)
      */
     position: number;
     /**
-     * null unless the trade is closed (type=2) or opened
+     * null unless the trade is closed (type=2) or
+     * opened
      * (type=0)
      */
     profit: number | null;
@@ -808,6 +804,9 @@ export type Trade = {
      * Timestamp (only in getTrades)
      */
     timestamp: number | null;
+    nominalValue: number;
+    spread: number;
+    taxes: number;
 };
 export type Profit = {
     /**

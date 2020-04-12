@@ -5,6 +5,14 @@ export default class EventTarget2 extends EventTarget {
      */
     off(eventName: string): void;
 
+    /**
+     * Returns an iterator that loops over caught events
+     * @param {string} eventName
+     * @param {object} options
+     * @yields Promise<Event|CustomEvent>
+     */
+    on(eventName: string, options: object): AsyncGenerator<any, void, undefined>;
+
     #private;
 
     /**
@@ -13,12 +21,4 @@ export default class EventTarget2 extends EventTarget {
      * @return {Promise<Event|CustomEvent>}
      */
     once(eventName: string): Promise<Event | CustomEvent<any>>;
-
-    /**
-     * Returns an iterator that loops over caught events
-     * @param {string} eventName
-     * @param {object} options
-     * @yields Promise<Event|CustomEvent>
-     */
-    on(eventName: string, options: object): AsyncGenerator<any, void, undefined>;
 }
