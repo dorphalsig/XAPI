@@ -1,11 +1,12 @@
 {
   "name": "xapi-js",
-  "version": "1.0.0",
+  "version": "1.0.6",
   "description": "Javascript Implementation of the XTB/XopenCommerce API for automated trading",
   "keywords": [],
   "author": "David Sarmiento <dorphalsig [-at-NOSPAM] gmail [-DOT-NOSPAM] com>",
-  "license": "Apache",
+  "license": "Apache-2.0",
   "private": true,
+  "types": "index.d.ts",
   "devDependencies": {
     "babel-eslint": "^10.1.0",
     "typescript": "^3.8.3",
@@ -31,5 +32,17 @@
       "browser": false,
       "es6": true
     }
-  }
+  },
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/dorphalsig/XAPI.git"
+  },
+  "bugs": {
+    "url": "https://github.com/dorphalsig/XAPI/issues"
+  },
+  "homepage": "https://github.com/dorphalsig/XAPI#readme"
 }

@@ -40,8 +40,8 @@ export type XApi = {
     }>;
 };
 declare namespace XApi {
-    export { XApiClient as Client };
-    export { xapi_constants as Constants };
+    export {XApiClient as Client};
+    export {xapi_constants as Constants};
 }
 import XApiClient from "./src/brokers/xtb/x_api_client";
-import xapi_constants from "./src/brokers/xtb/xapi_constants";
+import * as xapi_constants from "./src/brokers/xtb/xapi_constants";
