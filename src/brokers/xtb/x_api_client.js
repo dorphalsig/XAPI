@@ -721,7 +721,7 @@ export default class XApiClient {
 
   /**
    * Subscribes to news.
-   * @return {News}
+   * @return {AsyncGenerator<News>}
    */
   async* streamNews() {
     return this._streamOperation(XAPIConstants.STREAM_NEWS, 'getNews');
@@ -853,91 +853,94 @@ export default class XApiClient {
 /**
  * @typedef Balance
  * @type {Object}
- * @param {number} balance balance in account currency
- * @param {number} credit credit in account currency
- * @param {?string} currency user currency  (only in getMarginLevel)
- * @param {number} equity sum of balance and all profits in account currency
- * @param {number} margin margin requirements
- * @param {number} marginFree free margin
- * @param {number} marginLevel margin level percentage
+ * @property {number} balance balance in account currency
+ * @property {number} credit credit in account currency
+ * @property {?string} currency user currency  (only in getMarginLevel)
+ * @property {number} equity sum of balance and all profits in account currency
+ * @property {number} margin margin requirements
+ * @property {number} marginFree free margin
+ * @property {number} marginLevel margin level percentage
  */
 
 /**
  * @typedef News
  * @type {Object}
- * @param {string} body Body
- * @param {string} key News key
- * @param {number} time Time (timestamp)
- * @param {string} title News title
+ * @property {string} body Body
+ * @property {string} key News key
+ * @property {number} time Time (timestamp)
+ * @property {string} title News title
  */
 
 /**
  * @typedef Candle
- * @type {Object}
- * @param {number} close Close price in base currency
- * @param {number} ctm Candle start time in CET time zone (timestamp)
- * @param {string} ctmString String representation of the ctm field
- * @param {number} high Highest value in the given period in base currency
- * @param {number} low Lowest value in the given period in base currency
- * @param {number} open Open price in base currency
- * @param {?XApiClient.quoteId} quoteId Source of price (only for streaming)
- * @param {?string} symbol Symbol (only for streaming)
- * @param {number} vol Volume in lots
+ * @type {RateInfoRecord}
+ * @property {number} close Close price in base currency
+ * @property {number} ctm Candle start time in CET time zone (timestamp)
+ * @property {string} ctmString String representation of the ctm field
+ * @property {number} high Highest value in the given period in base currency
+ * @property {number} low Lowest value in the given period in base currency
+ * @property {number} open Open price in base currency
+ * @property {?XApiClient.quoteId} quoteId Source of price (only for streaming)
+ * @property {?string} symbol Symbol (only for streaming)
+ * @property {number} vol Volume in lots
  */
 
 /**
  * @typedef TickPrice
  * @type {Object}
- * @param {number} ask Ask price in base currency
- * @param {number} askVolume Number of available lots to buy at given price or
- *     null if not applicable
- * @param {number} bid Bid price in base currency
- * @param {number} bidVolume Number of available lots to buy at given price or
- *     null if not applicable
- * @param {number} high The highest price of the day in base currency
- * @param {number} level Price level
- * @param {number} low The lowest price of the day in base currency
- * @param {?XApiClient.quoteId} quoteId Source of price, detailed description
+ * @property {number} ask Ask price in base currency
+ * @property {number} askVolume Number of available lots to buy at given price
+ *     or null if not applicable
+ * @property {number} bid Bid price in base currency
+ * @property {number} bidVolume Number of available lots to buy at given price
+ *     or null if not applicable
+ * @property {number} high The highest price of the day in base currency
+ * @property {number} level Price level
+ * @property {number} low The lowest price of the day in base currency
+ * @property {?XApiClient.quoteId} quoteId Source of price, detailed
+ *     description
  *     below
- * @param {number} spreadRaw The difference between raw ask and bid prices
- * @param {number} spreadTable Spread representation
- * @param {string} symbol Symbol
- * @param {number} timestamp Timestamp
+ * @property {number} spreadRaw The difference between raw ask and bid prices
+ * @property {number} spreadTable Spread representation
+ * @property {string} symbol Symbol
+ * @property {number} timestamp Timestamp
  */
 
 /**
  * @typedef Trade
  * @type {Object}
- * @param {number} close_price Close price in base currency
- * @param {?number} close_time Null if order is not closed
- * @param {boolean} closed Closed
- * @param {XApiClient.command} cmd Operation code
- * @param {string} comment Comment
- * @param {?number} commission Commission in account currency, null if not
+ * @property {number} close_price Close price in base currency
+ * @property {?number} close_time Null if order is not closed
+ * @property {boolean} closed Closed
+ * @property {XApiClient.command} cmd Operation code
+ * @property {string} comment Comment
+ * @property {?number} commission Commission in account currency, null if not
  *     applicable
- * @param {?string} customComment The value the customer may provide in order
+ * @property {?string} customComment The value the customer may provide in
+ *     order
  *     to retrieve it later.
- * @param {number} digits Number of decimal places
- * @param {?number} expiration Null if order is not closed
- * @param {number} margin_rate Margin rate
- * @param {number} offset Trailing offset
- * @param {number} open_price Open price in base currency
- * @param {number} open_time Open time
- * @param {number} order Order number for opened transaction
- * @param {number} order2 Transaction id
- * @param {number} position Position number (if type is 0 and 2) or transaction
- *     parameter (if type is 1)
- * @param {?number} profit null unless the trade is closed (type=2) or opened
+ * @property {number} digits Number of decimal places
+ * @property {?number} expiration Null if order is not closed
+ * @property {number} margin_rate Margin rate
+ * @property {number} offset Trailing offset
+ * @property {number} open_price Open price in base currency
+ * @property {number} open_time Open time
+ * @property {number} order Order number for opened transaction
+ * @property {number} order2 Transaction id
+ * @property {number} position Position number (if type is 0 and 2) or
+ *     transaction parameter (if type is 1)
+ * @property {?number} profit null unless the trade is closed (type=2) or
+ *     opened
  *     (type=0)
- * @param {number} sl Zero if stop loss is not set (in base currency)
- * @param {?string} state Trade state, should be used for detecting pending
+ * @property {number} sl Zero if stop loss is not set (in base currency)
+ * @property {?string} state Trade state, should be used for detecting pending
  *     order's cancellation (only in streamTrades)
- * @param {number} storage Storage
- * @param {string} symbol Symbol
- * @param {number} tp Zero if take profit is not set (in base currency)
- * @param {?number} type type (only in streamTrades)
- * @param {number} volume Volume in lots
- * @param {?number} timestamp Timestamp (only in getTrades)
+ * @property {number} storage Storage
+ * @property {string} symbol Symbol
+ * @property {number} tp Zero if take profit is not set (in base currency)
+ * @property {?number} type type (only in streamTrades)
+ * @property {number} volume Volume in lots
+ * @property {?number} timestamp Timestamp (only in getTrades)
  */
 
 /**
@@ -1040,8 +1043,11 @@ export default class XApiClient {
 /**
  * @typedef ChartInfoRecord
  * @type {Object}
- * @param {number} digits
- * @param {rateInfoRecord[]} rateInfos
+ * @property {number} digits
+ * @property {rateInfoRecord[]} rateInfos
+ */
+
+/**
  * @typedef rateInfoRecord
  * @type {Object}
  * @property {number} close Value of close price (shift from open price)

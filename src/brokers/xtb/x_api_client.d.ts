@@ -85,7 +85,6 @@ export default class XApiClient {
         MODIFY: number;
         DELETE: number;
     }>;
-
     /**
      * Asynchronous Constructor
      * @param {string} username
@@ -93,7 +92,6 @@ export default class XApiClient {
      * @param {boolean} isDemo
      */
     constructor(username: string, password: string, isDemo: boolean);
-
     /**
      * Returns various account indicators
      * Note: streamBalance is the preferred way of retrieving account
@@ -167,14 +165,12 @@ export default class XApiClient {
      * @return {Promise<TickerSymbol[]>}
      */
     getAllSymbols(): Promise<TickerSymbol[]>;
-
-    #private;
-
     /**
      * Returns calendar with market events.
      * @return {Promise<Calendar[]>}
      */
     getCalendar(): Promise<Calendar[]>;
+    #private;
 
     /**
      * Returns chart info, from start date to the current time.
@@ -204,7 +200,192 @@ export default class XApiClient {
         PERIOD_W1: number;
         /** 30 days */
         PERIOD_MN1: number;
-    }>, start: number, symbol: string): Promise<Candle[]>;
+    }>, start: number, symbol: string): Promise<RateInfoRecord[]>;
+
+    /**
+     * Returns calculation of commission and rate of exchange.
+     * The value is calculated as expected value, and therefore might not be
+     * perfectly accurate.
+     * @param {string} tickerSymbol
+     * @param {number} volume
+     * @return {Promise<Commission>}
+     */
+    getCommissionDef(tickerSymbol: string, volume: number): Promise<Commission>;
+    /**
+     * Returns information about account currency, and account leverage
+     * for the current API user
+     * @return {Promise<UserData>}
+     */
+    getCurrentUserData(): Promise<UserData>;
+    /**
+     * Returns IBs data from the given time range.
+     * @param {number} start (timestamp) Start of IBs history block
+     * @param {number} end (timestamp) End of IBs history block
+     * @return {Promise<IB[]>}
+     */
+    getIbsHistory(start: number, end: number): Promise<IB[]>;
+    /**
+     * Returns various account indicators
+     * streamBalance is the preferred way of retrieving account indicators
+     * @return {Promise<Balance>}
+     */
+    getMarginLevel(): Promise<Balance>;
+    /**
+     * Returns expected margin for given instrument and volume.
+     * The value is calculated as expected margin value, and therefore might not
+     * be perfectly accurate.
+     * @param {string} symbol
+     * @param {number} volume
+     * @return {Promise<Margin>}
+     */
+    getMarginTrade(symbol: string, volume: number): Promise<Margin>;
+    /**
+     * Returns news from trading server which were sent within specified Period
+     * of time.
+     * Note: streamNews is the preferred way of retrieving news data.
+     * @param {number} start (timestamp)
+     * @param {number} end (timestamp)
+     * @return {Promise<News[]>}
+     */
+    getNews(start: number, end: number): Promise<News[]>;
+    /**
+     * Calculates estimated profit for given deal data Should be used for
+     * calculator-like apps only. Profit for opened transactions should be
+     * taken from server, due to higher precision of server calculation.
+     * @param {XApiClient.command} cmd Operation code
+     * @param {string} symbol symbol
+     * @param {number} volume volume
+     * @param {number} openPrice theoretical open price of order*
+     * @param {number} closePrice theoretical close price of order
+     * @return {Promise<ProfitCalculation>}
+     */
+    getProfitCalculation(cmd: Readonly<{
+        BUY: number;
+        SELL: number;
+        BUY_LIMIT: number;
+        SELL_LIMIT: number;
+        BUY_STOP: number;
+        SELL_STOP: number;
+        BALANCE: number;
+        CREDIT: number;
+    }>, symbol: string, volume: number, openPrice: number, closePrice: number): Promise<ProfitCalculation>;
+    /**
+     * Returns current time on trading server.
+     * @return {Promise<ServerTime>}
+     */
+    getServerTime(): Promise<ServerTime>;
+    /**
+     * Returns a list of step rules for DMAs
+     * @return {Promise<StepRule[]>}
+     */
+    getStepRules(): Promise<StepRule[]>;
+    /**
+     * Returns information about symbol available for the user.
+     * @return {Promise<TickerSymbol>}
+     */
+    getSymbol(): Promise<TickerSymbol>;
+    /**
+     * Returns array of current quotations for given symbols, only quotations that
+     * changed from given timestamp are returned. New timestamp obtained from
+     * output will be used as an argument of the next call of this command.
+     * streamTickPrices is the preferred way of retrieving ticks data.
+     * @param {number} level price level
+     * @param {string[]} symbols Array of symbol names
+     * @param {number} timestamp The time from which the most recent tick should
+     * be looked for. Historical prices cannot be obtained using this parameter.
+     * It can only be used to verify whether a price has changed since the given
+     * time.
+     * @return {Promise<TickPrice[]>}
+     * @see http://developers.xstore.pro/documentation/#getTickPrices
+     */
+    getTickPrices(level: number, symbols: string[], timestamp: number): Promise<TickPrice[]>;
+    /**
+     * Returns array of trades listed in orders argument.
+     * @param {number[]} orders Array of orders (position numbers)
+     * @return {Promise<Trade[]>}
+     */
+    getTradeRecords(orders: number[]): Promise<Trade[]>;
+    /**
+     * Returns array of user's trades
+     * Note: streamTrades is the preferred way of retrieving trades data.
+     * @param {boolean} openedOnly if true then only open trades will be returned
+     * @return {Promise<Trade[]>}
+     */
+    getTrades(openedOnly: boolean): Promise<Trade[]>;
+    /**
+     * Returns array of user's trades which were closed within specified Period
+     * of time.
+     * Note: streamTrades is the preferred way of retrieving trades data.
+     * @param {number} start (timestamp)
+     * @param {number} end (timestamp)
+     * @return {Promise<Trade[]>}
+     */
+    getTradesHistory(start: number, end: number): Promise<Trade[]>;
+    /**
+     * Returns quotes and trading times.
+     * @param {string[]} symbols
+     * @return {Promise<TradingHours[]>}
+     */
+    getTradingHours(symbols: string[]): Promise<TradingHours[]>;
+    /**
+     * Returns the current API version.
+     * @return {Promise<Version>}
+     */
+    getVersion(): Promise<Version>;
+    /**
+     * In order to perform any action client applications have to perform login
+     * process. No functionality is available before a successful login. After
+     * initial login, a new session is created and all commands can executed by
+     * an authenticated user until he/she logs out or drops the connection.
+     */
+    login(): Promise<boolean>;
+    /**
+     * logs out and closes all the sockets
+     */
+    logout(): void;
+    /**
+     * Regularly calling this function is enough to refresh the internal state of
+     * all the components in the system. It is recommended that any application
+     * that does not execute other commands, should call this command at least
+     * once every 10 minutes.
+     */
+    ping(): void;
+    /**
+     * stops streaming Balance
+     */
+    stopStreamBalance(): void;
+    /**
+     * stops streaming candles for the specified symbol
+     * @param {string} symbol
+     */
+    stopStreamCandles(symbol: string): void;
+    /**
+     * stops streaming Keep-Alive
+     */
+    stopStreamKeepAlive(): void;
+    /**
+     * stops streaming News
+     */
+    stopStreamNews(): void;
+    /**
+     * stops streaming Profits
+     */
+    stopStreamProfits(): void;
+    /**
+     * stops streaming trades status for the specified symbol
+     * @param {string} symbol
+     */
+    stopStreamTickPrices(symbol: string): void;
+
+    /**
+     * stops streaming trades status
+     */
+    stopStreamTradeStatus(): void;
+
+    /**
+     * stops streaming trades
+     */
+    stopStreamTrades(): void;
 
     /**
      * Returns chart info with data between given start and end dates.
@@ -242,216 +423,7 @@ export default class XApiClient {
         PERIOD_W1: number;
         /** 30 days */
         PERIOD_MN1: number;
-    }>, symbol: string, ticks?: number): Promise<Candle[]>;
-
-    /**
-     * Returns calculation of commission and rate of exchange.
-     * The value is calculated as expected value, and therefore might not be
-     * perfectly accurate.
-     * @param {string} tickerSymbol
-     * @param {number} volume
-     * @return {Promise<Commission>}
-     */
-    getCommissionDef(tickerSymbol: string, volume: number): Promise<Commission>;
-
-    /**
-     * Returns information about account currency, and account leverage
-     * for the current API user
-     * @return {Promise<UserData>}
-     */
-    getCurrentUserData(): Promise<UserData>;
-
-    /**
-     * Returns IBs data from the given time range.
-     * @param {number} start (timestamp) Start of IBs history block
-     * @param {number} end (timestamp) End of IBs history block
-     * @return {Promise<IB[]>}
-     */
-    getIbsHistory(start: number, end: number): Promise<IB[]>;
-
-    /**
-     * Returns various account indicators
-     * streamBalance is the preferred way of retrieving account indicators
-     * @return {Promise<Balance>}
-     */
-    getMarginLevel(): Promise<Balance>;
-
-    /**
-     * Returns expected margin for given instrument and volume.
-     * The value is calculated as expected margin value, and therefore might not
-     * be perfectly accurate.
-     * @param {string} symbol
-     * @param {number} volume
-     * @return {Promise<Margin>}
-     */
-    getMarginTrade(symbol: string, volume: number): Promise<Margin>;
-
-    /**
-     * Returns news from trading server which were sent within specified Period
-     * of time.
-     * Note: streamNews is the preferred way of retrieving news data.
-     * @param {number} start (timestamp)
-     * @param {number} end (timestamp)
-     * @return {Promise<News[]>}
-     */
-    getNews(start: number, end: number): Promise<News[]>;
-
-    /**
-     * Calculates estimated profit for given deal data Should be used for
-     * calculator-like apps only. Profit for opened transactions should be
-     * taken from server, due to higher precision of server calculation.
-     * @param {XApiClient.command} cmd Operation code
-     * @param {string} symbol symbol
-     * @param {number} volume volume
-     * @param {number} openPrice theoretical open price of order*
-     * @param {number} closePrice theoretical close price of order
-     * @return {Promise<ProfitCalculation>}
-     */
-    getProfitCalculation(cmd: Readonly<{
-        BUY: number;
-        SELL: number;
-        BUY_LIMIT: number;
-        SELL_LIMIT: number;
-        BUY_STOP: number;
-        SELL_STOP: number;
-        BALANCE: number;
-        CREDIT: number;
-    }>, symbol: string, volume: number, openPrice: number, closePrice: number): Promise<ProfitCalculation>;
-
-    /**
-     * Returns current time on trading server.
-     * @return {Promise<ServerTime>}
-     */
-    getServerTime(): Promise<ServerTime>;
-
-    /**
-     * Returns a list of step rules for DMAs
-     * @return {Promise<StepRule[]>}
-     */
-    getStepRules(): Promise<StepRule[]>;
-
-    /**
-     * Returns information about symbol available for the user.
-     * @return {Promise<TickerSymbol>}
-     */
-    getSymbol(): Promise<TickerSymbol>;
-
-    /**
-     * Returns array of current quotations for given symbols, only quotations that
-     * changed from given timestamp are returned. New timestamp obtained from
-     * output will be used as an argument of the next call of this command.
-     * streamTickPrices is the preferred way of retrieving ticks data.
-     * @param {number} level price level
-     * @param {string[]} symbols Array of symbol names
-     * @param {number} timestamp The time from which the most recent tick should
-     * be looked for. Historical prices cannot be obtained using this parameter.
-     * It can only be used to verify whether a price has changed since the given
-     * time.
-     * @return {Promise<TickPrice[]>}
-     * @see http://developers.xstore.pro/documentation/#getTickPrices
-     */
-    getTickPrices(level: number, symbols: string[], timestamp: number): Promise<TickPrice[]>;
-
-    /**
-     * Returns array of trades listed in orders argument.
-     * @param {number[]} orders Array of orders (position numbers)
-     * @return {Promise<Trade[]>}
-     */
-    getTradeRecords(orders: number[]): Promise<Trade[]>;
-
-    /**
-     * Returns array of user's trades
-     * Note: streamTrades is the preferred way of retrieving trades data.
-     * @param {boolean} openedOnly if true then only open trades will be returned
-     * @return {Promise<Trade[]>}
-     */
-    getTrades(openedOnly: boolean): Promise<Trade[]>;
-
-    /**
-     * Returns array of user's trades which were closed within specified Period
-     * of time.
-     * Note: streamTrades is the preferred way of retrieving trades data.
-     * @param {number} start (timestamp)
-     * @param {number} end (timestamp)
-     * @return {Promise<Trade[]>}
-     */
-    getTradesHistory(start: number, end: number): Promise<Trade[]>;
-
-    /**
-     * Returns quotes and trading times.
-     * @param {string[]} symbols
-     * @return {Promise<TradingHours[]>}
-     */
-    getTradingHours(symbols: string[]): Promise<TradingHours[]>;
-
-    /**
-     * Returns the current API version.
-     * @return {Promise<Version>}
-     */
-    getVersion(): Promise<Version>;
-
-    /**
-     * In order to perform any action client applications have to perform login
-     * process. No functionality is available before a successful login. After
-     * initial login, a new session is created and all commands can executed by
-     * an authenticated user until he/she logs out or drops the connection.
-     */
-    login(): Promise<boolean>;
-
-    /**
-     * logs out and closes all the sockets
-     */
-    logout(): void;
-
-    /**
-     * Regularly calling this function is enough to refresh the internal state of
-     * all the components in the system. It is recommended that any application
-     * that does not execute other commands, should call this command at least
-     * once every 10 minutes.
-     */
-    ping(): void;
-
-    /**
-     * stops streaming Balance
-     */
-    stopStreamBalance(): void;
-
-    /**
-     * stops streaming candles for the specified symbol
-     * @param {string} symbol
-     */
-    stopStreamCandles(symbol: string): void;
-
-    /**
-     * stops streaming Keep-Alive
-     */
-    stopStreamKeepAlive(): void;
-
-    /**
-     * stops streaming News
-     */
-    stopStreamNews(): void;
-
-    /**
-     * stops streaming Profits
-     */
-    stopStreamProfits(): void;
-
-    /**
-     * stops streaming trades status for the specified symbol
-     * @param {string} symbol
-     */
-    stopStreamTickPrices(symbol: string): void;
-
-    /**
-     * stops streaming trades status
-     */
-    stopStreamTradeStatus(): void;
-
-    /**
-     * stops streaming trades
-     */
-    stopStreamTrades(): void;
+    }>, symbol: string, ticks?: number): Promise<RateInfoRecord[]>;
 
     /**
      * Subscribes to API chart candles. The interval of every candle is 1 minute.
@@ -474,19 +446,6 @@ export default class XApiClient {
      * @yields {Balance}
      */
     streamBalance(): AsyncGenerator<any, void, unknown>;
-
-    /**
-     * Subscribes to news.
-     * @return {News}
-     */
-    streamNews(): News;
-
-    /**
-     * Subscribes to profits
-     * @yields Profit
-     */
-    streamProfits(): AsyncGenerator<any, void, unknown>;
-
     /**
      * Regularly calling this function is enough to refresh the internal state of
      * all the components in the system. Streaming connection, when any command
@@ -497,23 +456,16 @@ export default class XApiClient {
     streamPing(): AsyncGenerator<any, void, unknown>;
 
     /**
-     * Establishes subscription for quotations and allows to obtain the relevant
-     * information in real-time, as soon as it is available in the system. The
-     * getTickPrices command can be invoked many times for the same symbol, but
-     * only one subscription for a given symbol will be created. Please beware
-     * that when multiple records are available, the order in which they are
-     * received is not guaranteed. minArrivalTime
-     * @param {string} symbol Symbol
-     * @param {Object} options
-     * @param {number} options.minArrivalTime The minimal interval in milliseconds
-     * between any two consecutive updates.
-     * @param {number} options.maxLevel
-     * @yields TickPrice
+     * Subscribes to news.
+     * @return {AsyncGenerator<News>}
      */
-    streamTickPrices(symbol: string, {minArrivalTime, maxLevel}: {
-        minArrivalTime: number;
-        maxLevel: number;
-    }): AsyncGenerator<never, AsyncGenerator<any, void, unknown>, unknown>;
+    streamNews(): AsyncGenerator<News, any, any>;
+
+    /**
+     * Subscribes to profits
+     * @yields Profit
+     */
+    streamProfits(): AsyncGenerator<any, void, unknown>;
 
     /**
      * Allows to get status for sent trade requests in real-time, as soon as it
@@ -533,7 +485,6 @@ export default class XApiClient {
      * @yields Trade
      */
     streamTrades(): AsyncGenerator<any, void, unknown>;
-
     /**
      * Starts trade transaction. tradeTransaction sends main transaction
      * information to the server.
@@ -578,12 +529,286 @@ export default class XApiClient {
      * @return {Promise<TradeStatus>}
      */
     tradeTransactionStatus(order: number): Promise<TradeStatus>;
+
+    /**
+     * Establishes subscription for quotations and allows to obtain the relevant
+     * information in real-time, as soon as it is available in the system. The
+     * getTickPrices command can be invoked many times for the same symbol, but
+     * only one subscription for a given symbol will be created. Please beware
+     * that when multiple records are available, the order in which they are
+     * received is not guaranteed. minArrivalTime
+     * @param {string} symbol Symbol
+     * @param {Object} options
+     * @param {number} options.minArrivalTime The minimal interval in milliseconds
+     * between any two consecutive updates.
+     * @param {number} options.maxLevel
+     * @yields TickPrice
+     */
+    streamTickPrices(symbol: string, {minArrivalTime, maxLevel}: {
+        minArrivalTime: number;
+        maxLevel: number;
+    }): AsyncGenerator<never, AsyncGenerator<any, void, unknown>, unknown>;
 }
-export type Balance = {};
-export type News = {};
-export type Candle = {};
-export type TickPrice = {};
-export type Trade = {};
+export type Balance = {
+    /**
+     * balance in account currency
+     */
+    balance: number;
+    /**
+     * credit in account currency
+     */
+    credit: number;
+    /**
+     * user currency  (only in getMarginLevel)
+     */
+    currency: string | null;
+    /**
+     * sum of balance and all profits in account currency
+     */
+    equity: number;
+    /**
+     * margin requirements
+     */
+    margin: number;
+    /**
+     * free margin
+     */
+    marginFree: number;
+    /**
+     * margin level percentage
+     */
+    marginLevel: number;
+};
+export type News = {
+    /**
+     * Body
+     */
+    body: string;
+    /**
+     * News key
+     */
+    key: string;
+    /**
+     * Time (timestamp)
+     */
+    time: number;
+    /**
+     * News title
+     */
+    title: string;
+};
+export type Candle = {
+    /**
+     * instrument symbol
+     */
+    symbol: string;
+    /**
+     * Value of close price (shift from open price)
+     */
+    close: number;
+    /**
+     * Candle start time in CET / CEST time zone (see
+     * Daylight Saving Time, DST)
+     */
+    ctm: number;
+    /**
+     * String representation of the 'ctm' field
+     */
+    ctmString: string;
+    /**
+     * Highest value in the given period (shift from open
+     * price)
+     */
+    high: number;
+    /**
+     * Lowest value in the given period (shift from open
+     * price)
+     */
+    low: number;
+    /**
+     * Open price (in base currency * 10 to the power of
+     * digits)
+     */
+    open: number;
+    /**
+     * Volume in lots
+     */
+    vol: number;
+};
+export type TickPrice = {
+    /**
+     * Ask price in base currency
+     */
+    ask: number;
+    /**
+     * Number of available lots to buy at given price or
+     * null if not applicable
+     */
+    askVolume: number;
+    /**
+     * Bid price in base currency
+     */
+    bid: number;
+    /**
+     * Number of available lots to buy at given price or
+     * null if not applicable
+     */
+    bidVolume: number;
+    /**
+     * The highest price of the day in base currency
+     */
+    high: number;
+    /**
+     * Price level
+     */
+    level: number;
+    /**
+     * The lowest price of the day in base currency
+     */
+    low: number;
+    /**
+     * Source of price, detailed description
+     * below
+     */
+    quoteId: Readonly<{
+        FIXED: number;
+        FLOAT: number;
+        DEPTH: number;
+        CROSS: number;
+    }> | null;
+    /**
+     * The difference between raw ask and bid prices
+     */
+    spreadRaw: number;
+    /**
+     * Spread representation
+     */
+    spreadTable: number;
+    /**
+     * Symbol
+     */
+    symbol: string;
+    /**
+     * Timestamp
+     */
+    timestamp: number;
+};
+export type Trade = {
+    /**
+     * Close price in base currency
+     */
+    close_price: number;
+    /**
+     * Null if order is not closed
+     */
+    close_time: number | null;
+    /**
+     * Closed
+     */
+    closed: boolean;
+    /**
+     * Operation code
+     */
+    cmd: Readonly<{
+        BUY: number;
+        SELL: number;
+        BUY_LIMIT: number;
+        SELL_LIMIT: number;
+        BUY_STOP: number;
+        SELL_STOP: number;
+        BALANCE: number;
+        CREDIT: number;
+    }>;
+    /**
+     * Comment
+     */
+    comment: string;
+    /**
+     * Commission in account currency, null if not
+     * applicable
+     */
+    commission: number | null;
+    /**
+     * The value the customer may provide in order
+     * to retrieve it later.
+     */
+    customComment: string | null;
+    /**
+     * Number of decimal places
+     */
+    digits: number;
+    /**
+     * Null if order is not closed
+     */
+    expiration: number | null;
+    /**
+     * Margin rate
+     */
+    margin_rate: number;
+    /**
+     * Trailing offset
+     */
+    offset: number;
+    /**
+     * Open price in base currency
+     */
+    open_price: number;
+    /**
+     * Open time
+     */
+    open_time: number;
+    /**
+     * Order number for opened transaction
+     */
+    order: number;
+    /**
+     * Transaction id
+     */
+    order2: number;
+    /**
+     * Position number (if type is 0 and 2) or transaction
+     * parameter (if type is 1)
+     */
+    position: number;
+    /**
+     * null unless the trade is closed (type=2) or opened
+     * (type=0)
+     */
+    profit: number | null;
+    /**
+     * Zero if stop loss is not set (in base currency)
+     */
+    sl: number;
+    /**
+     * Trade state, should be used for detecting pending
+     * order's cancellation (only in streamTrades)
+     */
+    state: string | null;
+    /**
+     * Storage
+     */
+    storage: number;
+    /**
+     * Symbol
+     */
+    symbol: string;
+    /**
+     * Zero if take profit is not set (in base currency)
+     */
+    tp: number;
+    /**
+     * type (only in streamTrades)
+     */
+    type: number | null;
+    /**
+     * Volume in lots
+     */
+    volume: number;
+    /**
+     * Timestamp (only in getTrades)
+     */
+    timestamp: number | null;
+};
 export type Profit = {
     /**
      * Order number
@@ -845,7 +1070,10 @@ export type Calendar = {
      */
     title: string;
 };
-export type ChartInfoRecord = {};
+export type ChartInfoRecord = {
+    digits: number;
+    rateInfos: rateInfoRecord[];
+};
 export type rateInfoRecord = {
     /**
      * Value of close price (shift from open price)
