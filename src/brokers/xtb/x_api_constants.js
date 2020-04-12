@@ -14,7 +14,7 @@
  *    limitations under the License.
  */
 
-export default Object.freeze({
+let Constants = Object.freeze({
   ERROR_PREFIX: 'ERROR_',
   LOGIN: 'login',
   LOGOUT: 'logout',
@@ -51,3 +51,4 @@ export default Object.freeze({
   TRADE_TRANSACTION: 'tradeTransaction',
   TRADE_TRANSACTION_STATUS: 'tradeTransactionStatus',
 });
+export default Constants;

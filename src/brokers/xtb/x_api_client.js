@@ -16,7 +16,7 @@
 
 import EventTarget2 from 'src/events/events';
 import config from './config';
-import XAPIConstants from './xapi_constants';
+import XAPIConstants from 'src/brokers/xtb/x_api_constants';
 
 /**
  * Javascript Implementation of the API to call remote operations on the XTB/X

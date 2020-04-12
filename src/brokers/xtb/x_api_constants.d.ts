@@ -1,4 +1,5 @@
-declare var _default: Readonly<{
+export default Constants;
+declare let Constants: Readonly<{
     ERROR_PREFIX: string;
     LOGIN: string;
     LOGOUT: string;
@@ -35,4 +36,3 @@ declare var _default: Readonly<{
     TRADE_TRANSACTION: string;
     TRADE_TRANSACTION_STATUS: string;
 }>;
-export default _default;
