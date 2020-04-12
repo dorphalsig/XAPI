@@ -27,7 +27,7 @@ import XAPIConstants from './xapi_constants';
  *     streaming socket and then have the sockets identify if a new one must be
  *     opened
  */
-class XApiClient {
+export default class XApiClient {
   /**
    * @readonly
    * @enum {number}
@@ -141,17 +141,24 @@ class XApiClient {
    * waits for a reply
    * @param {string} customTag
    * @param {string} operationName
-   * @param {Object} args the operation parameters
-   * @return {Object}
+   * @param {Object} args the operation parameter;
+   * @return {Promise<*>}
    * @private
    * */
   async _callOperation(customTag, operationName, args = {}) {
     this._checkLoggedIn();
     const payload = {command: operationName, customTag: customTag};
     if (Object.keys(args).length !== 0 || args.constructor !== Object) {
+      // @ts-ignore
       payload.arguments = args;
     }
-    this.#sockets.get('operation').write(JSON.stringify(payload));
+    const socket = this.#sockets.get('operation');
+    if (typeof socket === 'undefined') {
+      throw Error('Could not find socket');
+    }
+    socket.send(JSON.stringify(payload));
+
+    // @ts-ignore
     return (await this.#emitter.once(operationName)).detail;
   }
 
@@ -175,13 +182,14 @@ class XApiClient {
    * @private
    */
   _connectSocket(name, endpoint = this.#endpoint) {
-    if (this.#sockets.has(name)) {
+
+    if (typeof this.#sockets.get(name) !== 'undefined') {
       console.log(`socket ${name} already exists. Doing nothing`);
+      // @ts-ignore
       return this.#sockets.get(name);
     }
     const socket = new WebSocket(endpoint);
-
-    socket.onclose = (function(closeEvent) {
+    socket.onclose = (closeEvent => {
       console.log(`Socket ${name} disconnected`);
       if (closeEvent.code !== 1000) {
         throw new Error(
@@ -189,14 +197,13 @@ class XApiClient {
             `Error code ${closeEvent.code}. More info can be found in` +
             'https://www.iana.org/assignments/websocket/websocket.xml#close-code-number');
       }
-      const socket = closeEvent.currentTarget;
       this.#sockets.delete(name);
       this.#data.delete(socket);
-    }).bind(this);
+    });
 
-    socket.onmessage = (function(messageEvent) {
-      this._parseResponse(messageEvent.data, messageEvent.source);
-    }).bind(this);
+    socket.onmessage = ((messageEvent) => {
+      this._parseResponse(messageEvent.data, socket);
+    });
 
     this.#sockets.set(name, socket);
     this.#data.set(socket, '');
@@ -215,8 +222,10 @@ class XApiClient {
     // API messages are always terminated with two newlines
     const remainder = (rcvd.lastIndexOf('\n\n') === rcvd.length - 2) ? '' :
         responses.pop();
+    if (typeof remainder === 'undefined') {
+      throw new Error('');
+    }
     this.#data.set(socket, remainder);
-
     for (const response of responses) {
       const responseObj = JSON.parse(response);
       if (responseObj.status) {
@@ -235,8 +244,7 @@ class XApiClient {
   }
 
   /**
-   *
-   * @param {object} chartInfo
+   * @param {ChartInfo} chartInfo
    * @param {string} symbol
    * @return {Candle[]}
    * @private
@@ -263,11 +271,12 @@ class XApiClient {
    * @private
    */
   _stopStreaming(customTag, stopCommand, args = {}) {
-    if (!this.#sockets.has(customTag)) {
+    const socket = this.#sockets.get(customTag);
+    if (typeof socket === 'undefined') {
       return false;
     }
+
     this.#emitter.off(customTag);
-    const socket = this.#sockets.get(customTag);
     const payload = {
       command: stopCommand,
       streamSessionId: this.#streamSessionId,
@@ -275,7 +284,7 @@ class XApiClient {
     if (Object.keys(args).length > 0) {
       Object.assign(payload, args);
     }
-    socket.write(JSON.stringify(payload));
+    socket.send(JSON.stringify(payload));
     socket.close();
     this.#sockets.delete(customTag);
     return true;
@@ -288,15 +297,14 @@ class XApiClient {
    * @param {string} customTag
    * @param {string} command
    * @param {Object} args the operation parameters
-   * @return {boolean} false if there is an already active subscription,
-   * true once its finished
+   * @yields {AsyncGenerator<*>} the received data
    * @private
    */
   async* _streamOperation(customTag, command, args = {}) {
     this._checkLoggedIn();
 
     if (this.#sockets.has(customTag)) {
-      return false;
+      return;
     }
     const socket = this._connectSocket(customTag, this.#streamEndpoint);
     this.#sockets.set(customTag, socket);
@@ -304,11 +312,11 @@ class XApiClient {
     if (Object.keys(args).length !== 0 || args.constructor !== Object) {
       Object.assign(payload, args);
     }
-    socket.write(JSON.stringify(payload));
+    socket.send(JSON.stringify(payload));
+    // @ts-ignore
     for await(let triggeredEvent of this.#emitter.on(customTag)) {
       yield triggeredEvent.detail;
     }
-    return true;
   }
 
   /**
@@ -414,8 +422,8 @@ class XApiClient {
    * streamBalance is the preferred way of retrieving account indicators
    * @return {Promise<Balance>}
    */
-  getMarginLevel() {
-    const result = this._callOperation(XAPIConstants.MARGIN_LEVEL,
+  async getMarginLevel() {
+    const result = await this._callOperation(XAPIConstants.MARGIN_LEVEL,
         'getMarginLevel');
     result.marginFree = result.margin_free;
     result.marginLevel = result.margin_level;
@@ -573,23 +581,29 @@ class XApiClient {
    * an authenticated user until he/she logs out or drops the connection.
    */
   async login() {
-    const errorEventName = XAPIConstants.ERROR_PREFIX + XAPIConstants.LOGIN;
-    this._connectSocket('operation', this.#endpoint);
-    this.#emitter.once(errorEventName, (response) => {
-      throw new Error(
-          `Could not log in: ${response.errorDescr} (${response.errorCode})`);
-    });
 
+    const errorEventType = XAPIConstants.ERROR_PREFIX + XAPIConstants.LOGIN;
+    const socket = this._connectSocket('operation', this.#endpoint);
     const payload = {
       command: 'login', arguments: {
         userId: this.#username, password: this.#password,
       }, customTag: XAPIConstants.LOGIN,
     };
 
-    this.#sockets.get('operation').write(JSON.stringify(payload));
+    socket.send(JSON.stringify(payload));
+    const errorPromise = () => this.#emitter.once(errorEventType);
+    const successPromise = () => this.#emitter.once(
+        XAPIConstants.LOGIN);
 
-    this.#streamSessionId = (await this.#emitter.once(
-        XAPIConstants.LOGIN)).detail;
+    const event = await Promise.race([errorPromise(), successPromise()]);
+    if (event.type === errorEventType) {
+      throw new Error(
+          // @ts-ignore
+          `Could not log in: ${event.detail.errorDescr} (${event.detail.errorCode})`);
+    }
+
+    // @ts-ignore
+    this.#streamSessionId = event.detail;
     this.isLoggedIn = true;
     return true;
   }
@@ -604,7 +618,7 @@ class XApiClient {
       socket.close();
       this.#sockets.delete(key);
     });
-    this.#streamSessionId = undefined;
+    this.#streamSessionId = '';
   }
 
   /**
@@ -740,9 +754,10 @@ class XApiClient {
    * that when multiple records are available, the order in which they are
    * received is not guaranteed. minArrivalTime
    * @param {string} symbol Symbol
-   * @param {number} minArrivalTime The minimal interval in milliseconds
-   *     between any two consecutive updates.
-   * @param {number} maxLevel
+   * @param {Object} options
+   * @param {number} options.minArrivalTime The minimal interval in milliseconds
+   * between any two consecutive updates.
+   * @param {number} options.maxLevel
    * @yields TickPrice
    */
   async* streamTickPrices(symbol, {minArrivalTime = 0, maxLevel}) {
@@ -793,8 +808,8 @@ class XApiClient {
    * @return {Promise<Order>}
    */
   tradeTransaction(cmd, customComment, expiration, offset, order, price, sl,
-      symbol, tp, type,
-      volume) {
+                   symbol, tp, type,
+                   volume) {
     return this._callOperation(XAPIConstants.TRADE_TRANSACTION,
         'tradeTransaction', {
           tradeTransInfo: {
@@ -835,5 +850,379 @@ class XApiClient {
     return response;
   }
 }
+/**
+ * @typedef Balance
+ * @type {Object}
+ * @param {number} balance balance in account currency
+ * @param {number} credit credit in account currency
+ * @param {?string} currency user currency  (only in getMarginLevel)
+ * @param {number} equity sum of balance and all profits in account currency
+ * @param {number} margin margin requirements
+ * @param {number} marginFree free margin
+ * @param {number} marginLevel margin level percentage
+ */
 
-export default XApiClient;
+/**
+ * @typedef News
+ * @type {Object}
+ * @param {string} body Body
+ * @param {string} key News key
+ * @param {number} time Time (timestamp)
+ * @param {string} title News title
+ */
+
+/**
+ * @typedef Candle
+ * @type {Object}
+ * @param {number} close Close price in base currency
+ * @param {number} ctm Candle start time in CET time zone (timestamp)
+ * @param {string} ctmString String representation of the ctm field
+ * @param {number} high Highest value in the given period in base currency
+ * @param {number} low Lowest value in the given period in base currency
+ * @param {number} open Open price in base currency
+ * @param {?XApiClient.quoteId} quoteId Source of price (only for streaming)
+ * @param {?string} symbol Symbol (only for streaming)
+ * @param {number} vol Volume in lots
+ */
+
+/**
+ * @typedef TickPrice
+ * @type {Object}
+ * @param {number} ask Ask price in base currency
+ * @param {number} askVolume Number of available lots to buy at given price or
+ *     null if not applicable
+ * @param {number} bid Bid price in base currency
+ * @param {number} bidVolume Number of available lots to buy at given price or
+ *     null if not applicable
+ * @param {number} high The highest price of the day in base currency
+ * @param {number} level Price level
+ * @param {number} low The lowest price of the day in base currency
+ * @param {?XApiClient.quoteId} quoteId Source of price, detailed description
+ *     below
+ * @param {number} spreadRaw The difference between raw ask and bid prices
+ * @param {number} spreadTable Spread representation
+ * @param {string} symbol Symbol
+ * @param {number} timestamp Timestamp
+ */
+
+/**
+ * @typedef Trade
+ * @type {Object}
+ * @param {number} close_price Close price in base currency
+ * @param {?number} close_time Null if order is not closed
+ * @param {boolean} closed Closed
+ * @param {XApiClient.command} cmd Operation code
+ * @param {string} comment Comment
+ * @param {?number} commission Commission in account currency, null if not
+ *     applicable
+ * @param {?string} customComment The value the customer may provide in order
+ *     to retrieve it later.
+ * @param {number} digits Number of decimal places
+ * @param {?number} expiration Null if order is not closed
+ * @param {number} margin_rate Margin rate
+ * @param {number} offset Trailing offset
+ * @param {number} open_price Open price in base currency
+ * @param {number} open_time Open time
+ * @param {number} order Order number for opened transaction
+ * @param {number} order2 Transaction id
+ * @param {number} position Position number (if type is 0 and 2) or transaction
+ *     parameter (if type is 1)
+ * @param {?number} profit null unless the trade is closed (type=2) or opened
+ *     (type=0)
+ * @param {number} sl Zero if stop loss is not set (in base currency)
+ * @param {?string} state Trade state, should be used for detecting pending
+ *     order's cancellation (only in streamTrades)
+ * @param {number} storage Storage
+ * @param {string} symbol Symbol
+ * @param {number} tp Zero if take profit is not set (in base currency)
+ * @param {?number} type type (only in streamTrades)
+ * @param {number} volume Volume in lots
+ * @param {?number} timestamp Timestamp (only in getTrades)
+ */
+
+/**
+ * @typedef Profit
+ * @type {Object}
+ * @property {number}  order Order number
+ * @property {number}  order2 Transaction ID
+ * @property {number}  position Position number
+ * @property {number}  profit Profit in account currency
+ */
+
+/**
+ * @event XAPIConstants.STREAM_KEEP_ALIVE
+ * @typedef KeepAlive
+ * @type {Object}
+ * @property {number} timestamp Current Timestamp
+ */
+
+/**
+ * @typedef TickerSymbol
+ * @type {Object}
+ * @property {number} bid Bid price in base currency
+ * @property {number} ask Ask price in base currency
+ * @property {string} categoryName Category name
+ * @property {number} contractSize Size of 1 lot
+ * @property {string} currency Currency
+ * @property {boolean} currencyPair Indicates whether the symbol represents a
+ *     currency pair
+ * @property {string} currencyProfit The currency of calculated profit
+ * @property {string} description Description
+ * @property {number} expiration Null if not applicable
+ * @property {string} groupName Symbol group name
+ * @property {number} high The highest price of the day in base currency
+ * @property {number} initialMargin Initial margin for 1 lot order, used for
+ *     profit/margin calculation
+ * @property {number} instantMaxVolume Maximum instant volume multiplied by 100
+ *     (in lots)
+ * @property {number} leverage Symbol leverage
+ * @property {boolean} longOnly Long only
+ * @property {number} lotMax Maximum size of trade
+ * @property {number} lotMin Minimum size of trade
+ * @property {number} lotStep A value of minimum step by which the size of
+ *     trade can be changed (within lotMin - lotMax range)
+ * @property {number} low The lowest price of the day in base currency
+ * @property {number} marginHedged Used for profit calculation
+ * @property {boolean} marginHedgedStrong For margin calculation
+ * @property {number} marginMaintenance For margin calculation, null if not
+ *     applicable
+ * @property {number} marginMode For margin calculation
+ * @property {number} percentage Percentage
+ * @property {number} pipsPrecision Number of symbol's pip decimal places
+ * @property {number} precision Number of symbol's price decimal places
+ * @property {number} profitMode For profit calculation
+ * @property {number} quoteId Source of price
+ * @property {boolean} shortSelling Indicates whether short selling is allowed
+ *     on the instrument
+ * @property {number} spreadRaw The difference between raw ask and bid prices
+ * @property {number} spreadTable Spread representation
+ * @property {number} starting Null if not applicable
+ * @property {number} stepRuleId Appropriate step rule ID from getStepRules
+ *     command response
+ * @property {number} stopsLevel Minimal distance (in pips) from the current
+ *     price where the stopLoss/takeProfit can be set
+ * @property {number} swap_rollover3days number when additional swap is
+ *     accounted for weekend
+ * @property {boolean} swapEnable Indicates whether swap value is added to
+ *     position on end of day
+ * @property {number} swapLong Swap value for long positions in pips
+ * @property {number} swapShort Swap value for short positions in pips
+ * @property {number} swapType Type of swap calculated
+ * @property {string} symbol Symbol name
+ * @property {number} tickSize Smallest possible price change, used for
+ *     profit/margin calculation, null if not applicable
+ * @property {number} tickValue Value of smallest possible price change (in
+ *     base currency), used for profit/margin calculation, null if not
+ *     applicable
+ * @property {number} number Ask & bid tick number
+ * @property {string} numberString number in String
+ * @property {boolean} trailingEnabled Indicates whether trailing stop (offset)
+ *     is applicable to the instrument.
+ * @property {number} type Instrument class number
+ */
+
+/**
+ * @typedef Calendar
+ * @type {Object}
+ * @property {string} country Two letter country code
+ * @property {string} current Market value (current), empty before time of
+ *     release of this value (time from "time" record)
+ * @property {string} forecast Forecasted value
+ * @property {string} impact Impact on market
+ * @property {string} period Information period
+ * @property {string} previous Value from previous information release
+ * @property {time} time Time, when the information will be released (in this
+ *     time empty "current" value should be changed with exact released value)
+ * @property {string} title Name of the indicator for which values will be
+ *     released
+ */
+
+/**
+ * @typedef ChartInfoRecord
+ * @type {Object}
+ * @param {number} digits
+ * @param {rateInfoRecord[]} rateInfos
+ * @typedef rateInfoRecord
+ * @type {Object}
+ * @property {number} close Value of close price (shift from open price)
+ * @property {number} ctm Candle start time in CET / CEST time zone (see
+ *     Daylight Saving Time, DST)
+ * @property {string} ctm String  String representation of the 'ctm' field
+ * @property {number} high Highest value in the given period (shift from open
+ *     price)
+ * @property {number} low Lowest value in the given period (shift from open
+ *     price)
+ * @property {number} open Open price (in base currency * 10 to the power of
+ *     digits)
+ * @property {number} vol Volume in lots
+ */
+
+/**
+ * @typedef Commission
+ * @type {Object}
+ * @property {number} commission calculated commission in account currency,
+ *     could be null if not applicable
+ * @property {?number} rateOfExchange rate of exchange between account currency
+ *     and instrument base currency, could be null if not applicable
+ */
+
+/**
+ * @typedef UserData
+ * @type {Object}
+ * @property {number} companyUnit Unit the account is assigned to.
+ * @property {string} currency account currency
+ * @property {string} group group
+ * @property {boolean} ibAccount Indicates whether this account is an IB
+ *     account.
+ * @property {number} leverageMultiplier The factor used for margin
+ *     calculations. The actual value of leverage can be calculated by dividing
+ *     this value by 100.
+ * @property {string} spreadType spreadType, null if not applicable
+ * @property {boolean} trailingStop Indicates whether this account is enabled
+ *     to use trailing stop.
+ */
+
+/**
+ * @typedef IB
+ * @type {Object}
+ * @property {number|null} closePrice IB close price or null if not allowed to
+ *     view
+ * @property {string|null} login IB user login or null if not allowed to view
+ * @property {number|null} nominal IB nominal or null if not allowed to view
+ * @property {number|null} openPrice IB open price or null if not allowed to
+ *     view
+ * @property {number|null} side Operation code or null if not allowed to view
+ * @property {string|null} surname IB user surname or null if not allowed to
+ *     view
+ * @property {string|null} symbol Symbol or null if not allowed to view
+ * @property {number|null} timestamp Time the record was created or null if not
+ *     allowed to view
+ * @property {number|null} volume  Volume in lots or null if not allowed to
+ *     view
+ */
+
+/**
+ * @typedef Margin
+ * @type {Object}
+ * @property {number} margin
+ */
+
+/**
+ * @typedef NewsTopicRecord
+ * @type {Object}
+ * @property {string} body Body
+ * @property {number} bodylen Body length
+ * @property {string} key News key
+ * @property {number} time Time (timestamp)
+ * @property {string} timeString Time string
+ * @property {string} title News title
+ */
+
+/**
+ * @typedef ProfitCalculation
+ * @type {Object}
+ * @property {number} profit
+ */
+
+/**
+ * @typedef Order
+ * @type {Object}
+ * @property {number} order
+ */
+
+/**
+ * @typedef TradeTransaction
+ * @type {Object}
+ * @property {number} cmd Operation code
+ * @property {string}  customComment The value the customer may provide in
+ *     order to retrieve it later.
+ * @property {number}  expiration Pending order expiration time
+ * @property {number}  offset Trailing offset
+ * @property {number}  order 0 or position number for closing/modifications
+ * @property {number}  price Trade price
+ * @property {number}  sl Stop loss
+ * @property {string}  symbol Trade symbol
+ * @property {number}  tp Take profit
+ * @property {number}  type Trade transaction type
+ * @property {number}  volume Trade volume
+ */
+
+/**
+ * @typedef ServerTime
+ * @type {Object}
+ * @property {number} timstamp Timestamp
+ * @property {string} timeString Textual representation of the timestamp
+ */
+
+/**
+ * @typedef StepRule
+ * @type {Object}
+ * @property {number} id Step rule ID
+ * @property {string} name Step rule name
+ * @property {Step[]} Steps
+ */
+
+/**
+ * @typedef Step
+ * @type {Object}
+ * @property {number} fromValue Lower border of the volume range
+ * @property {number} step lotStep value in the given volume range
+ */
+
+/**
+ * @typedef TradingHours
+ * @type {Object}
+ * @property {OperatingTime[]}  quotes Quotes records
+ * @property {string}  symbol Symbol
+ * @property {OperatingTime[]}  trading of Trading records
+ */
+
+/**
+ * @typedef OperatingTime
+ * @type {Object}
+ * @property {number}  day Day of week (1 = Monday, 7 = Sunday)
+ * @property {number}  fromT Start time in ms from 00:00 CET / CEST (timestamp)
+ * @property {number}  toT End time in ms from 00:00 CET / CEST (timestamp)
+ */
+
+/**
+ * @typedef TradeStatus
+ * @type {Object}
+ * @property {string} customComment The value the customer may provide in order
+ *     to retrieve it later.
+ * @property {string} message Can be null
+ * @property {number} order Unique order number
+ * @property {number} price Price in base currency
+ * @property {number} requestStatus Request status code, described below
+ */
+
+/**
+ * @typedef ChartInfo
+ * @type {Object}
+ * @property {number} digits Number of decimal places
+ * @property {RateInfoRecord[]} rateInfos
+ */
+
+/**
+ * @typedef RateInfoRecord
+ * @type {Object}
+ * @property {string} symbol instrument symbol
+ * @property {number} close Value of close price (shift from open price)
+ * @property {number} ctm Candle start time in CET / CEST time zone (see
+ *     Daylight Saving Time, DST)
+ * @property {string} ctmString String representation of the 'ctm' field
+ * @property {number} high Highest value in the given period (shift from open
+ *     price)
+ * @property {number} low Lowest value in the given period (shift from open
+ *     price)
+ * @property {number} open Open price (in base currency * 10 to the power of
+ *     digits)
+ * @property {number} vol Volume in lots
+ */
+
+/**
+ * @typedef Version
+ * @type {Object}
+ * @property {string} version version string
+ */
+

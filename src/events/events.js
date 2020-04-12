@@ -14,17 +14,19 @@
  *    limitations under the License.
  */
 
-class EventTarget2 extends EventTarget {
+export default class EventTarget2 extends EventTarget {
   /**
    * @type {Set<string>}
    */
   #eventsListened;
 
-  constructor() {super();}
+  constructor() {
+    super();
+  }
 
   /**
    * Stops iterating
-   * @param eventName
+   * @param {string} eventName
    */
   off(eventName) {
     this.#eventsListened.delete(eventName);
@@ -33,24 +35,34 @@ class EventTarget2 extends EventTarget {
   /**
    * Returns an iterator that loops over caught events
    * @param {string} eventName
-   * @param options
-   * @return {AsyncGenerator<Event>|void}
+   * @param {object} options
+   * @yields Promise<Event|CustomEvent>
    */
   async* on(eventName, options) {
     if (this.#eventsListened.has(eventName)) {
       return;
     }
+    /**
+     * @type {*[]}
+     */
     let results = [];
+    /**
+     * @type *
+     */
     let resolve;
     let promise = new Promise(r => resolve = r);
     let done = false;
     this.#eventsListened.add(eventName);
 
-    if (typeof options === 'object' && typeof options.once !== 'undefined') {
+    if (typeof options === 'object' && Object.hasOwnProperty('once')) {
       throw new Error('options.once is not supported. Use EventTarget2.once' +
           ' instead');
     }
 
+    /**
+     *
+     * @param {Event|CustomEvent} event
+     */
     const callback = event => {
       results.push(event);
       resolve();
@@ -72,8 +84,8 @@ class EventTarget2 extends EventTarget {
 
   /**
    * Wraps the event listener in a promise that will get resolved when it fires
-   * @param eventName
-   * @return {Promise<Event>}
+   * @param {string} eventName
+   * @return {Promise<Event|CustomEvent>}
    */
   once(eventName) {
     return new Promise(resolve => {
@@ -82,5 +94,3 @@ class EventTarget2 extends EventTarget {
 
   }
 }
-
-export default EventTarget2;

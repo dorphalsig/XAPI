@@ -14,7 +14,7 @@
  *    limitations under the License.
  */
 
-const XAPIConstants = Object.freeze({
+export default Object.freeze({
   ERROR_PREFIX: 'ERROR_',
   LOGIN: 'login',
   LOGOUT: 'logout',
@@ -51,4 +51,3 @@ const XAPIConstants = Object.freeze({
   TRADE_TRANSACTION: 'tradeTransaction',
   TRADE_TRANSACTION_STATUS: 'tradeTransactionStatus',
 });
-module.exports = XAPIConstants;
