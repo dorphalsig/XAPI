@@ -1,27 +1,15 @@
 {
   "name": "xapi-js",
   "version": "1.0.0",
-  "description": "",
+  "description": "Javascript Implementation of the XTB/XopenCommerce API for automated trading",
   "keywords": [],
   "author": "David Sarmiento <dorphalsig [-at-NOSPAM] gmail [-DOT-NOSPAM] com>",
   "license": "Apache",
   "private": true,
-  "scripts": {
-    "dev": "webpack-dev-server --content-base public"
-  },
   "devDependencies": {
     "babel-eslint": "^10.1.0",
-    "cross-env": "^5.2.0",
-    "css-loader": "^2.1.1",
-    "eslint": "^6.8.0",
-    "mini-css-extract-plugin": "^0.6.0",
-    "style-loader": "^0.23.1",
-    "svelte": "^3.0.0",
-    "svelte-loader": "2.13.3",
     "typescript": "^3.8.3",
-    "typescript-language-server": "^0.4.0",
-    "webpack": "^4.42.1",
-    "webpack-cli": "^3.3.11"
+    "typescript-language-server": "^0.4.0"
   },
   "eslintConfig": {
     "parser": "babel-eslint",
