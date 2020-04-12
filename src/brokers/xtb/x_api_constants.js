@@ -51,4 +51,4 @@ let Constants = Object.freeze({
   TRADE_TRANSACTION: 'tradeTransaction',
   TRADE_TRANSACTION_STATUS: 'tradeTransactionStatus',
 });
-export default Constants;
+export {Constants};

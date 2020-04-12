@@ -1,5 +1,4 @@
-export default Constants;
-declare let Constants: Readonly<{
+export let Constants: Readonly<{
     ERROR_PREFIX: string;
     LOGIN: string;
     LOGOUT: string;

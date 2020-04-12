@@ -28,8 +28,8 @@
       "semi": "error"
     },
     "env": {
-      "node": true,
-      "browser": false,
+      "node": false,
+      "browser": true,
       "es6": true
     }
   },

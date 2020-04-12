@@ -16,7 +16,7 @@
 
 import EventTarget2 from 'src/events/events';
 import config from './config';
-import XAPIConstants from 'src/brokers/xtb/x_api_constants';
+import {Constants} from 'src/brokers/xtb/x_api_constants';
 
 /**
  * Javascript Implementation of the API to call remote operations on the XTB/X
@@ -229,14 +229,14 @@ export default class XApiClient {
     for (const response of responses) {
       const responseObj = JSON.parse(response);
       if (responseObj.status) {
-        const returnData = responseObj.customTag === XAPIConstants.LOGIN ?
+        const returnData = responseObj.customTag === Constants.LOGIN ?
             responseObj.streamSessionId : responseObj.returnData;
         this.#emitter.dispatchEvent(
             new CustomEvent(responseObj.customTag, {detail: returnData}));
         continue;
       }
       this.#emitter.dispatchEvent(
-          new CustomEvent(XAPIConstants.ERROR_PREFIX + responseObj.customTag,
+          new CustomEvent(Constants.ERROR_PREFIX + responseObj.customTag,
               {detail: responseObj}));
       console.warn(`Call with customTag ${responseObj.customTag}` +
           `Failed: ${responseObj.errorDescr} (code: ${responseObj.errorCode})`);
