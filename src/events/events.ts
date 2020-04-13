@@ -34,7 +34,7 @@ export default class EventTarget2 extends EventTarget {
    * Returns an iterator that loops over caught events
    * @yields Promise<Event|CustomEvent>
    */
-  async* on(eventName: string, options?: AddEventListenerOptions): AsyncGenerator<Event> {
+  async *on(eventName: string, options?: AddEventListenerOptions): AsyncGenerator<Event> {
     if (this.#eventsListened.has(eventName)) {
       return;
     }

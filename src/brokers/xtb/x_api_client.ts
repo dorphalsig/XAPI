@@ -50,8 +50,8 @@ export class XApiClient {
   }
 
   private static processChartRequest(
-      chartInfo: XApiClient.ChartInfo,
-      symbol: string
+    chartInfo: XApiClient.ChartInfo,
+    symbol: string
   ): XApiClient.Candle[] {
     const candles = [];
     for (const response of chartInfo.rateInfos) {
@@ -91,9 +91,9 @@ export class XApiClient {
    * @see http://developers.xstore.pro/documentation/#getChartLastRequest
    */
   async getChartLastRequest(
-      period: XApiClient.Period,
-      start: number,
-      symbol: string
+    period: XApiClient.Period,
+    start: number,
+    symbol: string
   ): Promise<XApiClient.Candle[]> {
     const chartInfo = await this.callOperation(Constants.CHART_LAST_REQUEST, 'getCalendar', {
       info: {period: period, start: start, symbol: symbol},
@@ -119,24 +119,24 @@ export class XApiClient {
    * @see http://developers.xstore.pro/documentation/#getChartRangeRequest
    */
   async getChartRangeRequest(
-      start: number,
-      end: number,
-      period: XApiClient.Period,
-      symbol: string,
-      ticks = 0
+    start: number,
+    end: number,
+    period: XApiClient.Period,
+    symbol: string,
+    ticks = 0
   ): Promise<XApiClient.Candle[]> {
     const chartInfo = await this.callOperation(
-        Constants.CHART_RANGE_REQUEST,
-        'getChartRangeRequest',
-        {
-          info: {
-            start: start,
-            end: end,
-            period: period,
-            symbol: symbol,
-            ticks: ticks,
-          },
-        }
+      Constants.CHART_RANGE_REQUEST,
+      'getChartRangeRequest',
+      {
+        info: {
+          start: start,
+          end: end,
+          period: period,
+          symbol: symbol,
+          ticks: ticks,
+        },
+      }
     );
     return XApiClient.processChartRequest(chartInfo, symbol);
   }
@@ -232,11 +232,11 @@ export class XApiClient {
    * @return
    */
   getProfitCalculation(
-      cmd: XApiClient.Command,
-      symbol: string,
-      volume: number,
-      openPrice: number,
-      closePrice: number
+    cmd: XApiClient.Command,
+    symbol: string,
+    volume: number,
+    openPrice: number,
+    closePrice: number
   ): Promise<XApiClient.ProfitCalculation> {
     return this.callOperation(Constants.PROFIT_CALCULATION, 'getProfitCalculation', {
       cmd: cmd,
@@ -286,9 +286,9 @@ export class XApiClient {
    * @see http://developers.xstore.pro/documentation/#getTickPrices
    */
   getTickPrices(
-      level: number,
-      symbols: string,
-      timestamp: number
+    level: number,
+    symbols: string,
+    timestamp: number
   ): Promise<XApiClient.TickPrice[]> {
     return this.callOperation(Constants.TICK_PRICES, 'getTickPrices', {
       level: level,
@@ -500,7 +500,7 @@ export class XApiClient {
    * Subscribes to news.
    * @return
    */
-  async* streamNews(): AsyncGenerator<XApiClient.News> {
+  async *streamNews(): AsyncGenerator<XApiClient.News> {
     yield* this.streamOperation(Constants.STREAM_NEWS, 'getNews');
   }
 
@@ -511,7 +511,7 @@ export class XApiClient {
    * traffic. It is recommended that any application that does not execute
    * other commands, should call this Command at least once every 10 minutes.
    */
-  async* streamPing(): AsyncGenerator<XApiClient.KeepAlive> {
+  async *streamPing(): AsyncGenerator<XApiClient.KeepAlive> {
     yield* this.streamOperation(Constants.STREAM_PING, 'ping');
   }
 
@@ -519,7 +519,7 @@ export class XApiClient {
    * Subscribes to profits
    * @yields Profit
    */
-  async* streamProfits(): AsyncGenerator<XApiClient.Profit> {
+  async *streamProfits(): AsyncGenerator<XApiClient.Profit> {
     yield* this.streamOperation(Constants.STREAM_PROFITS, 'getProfits');
   }
 
@@ -531,9 +531,9 @@ export class XApiClient {
    * that when multiple records are available, the order in which they are
    * received is not guaranteed. minArrivalTime
    */
-  async* streamTickPrices(
-      symbol: string,
-      {minArrivalTime = 0, maxLevel}: { minArrivalTime: number; maxLevel: number }
+  async *streamTickPrices(
+    symbol: string,
+    {minArrivalTime = 0, maxLevel}: {minArrivalTime: number; maxLevel: number}
   ): AsyncGenerator<XApiClient.TickPrice> {
     const params = {
       minArrivalTime: minArrivalTime,
@@ -549,7 +549,7 @@ export class XApiClient {
    * available in the system. Please beware that when multiple records are
    * available, the order in which they are received is not guaranteed.
    */
-  async* streamTradeStatus(): AsyncGenerator<XApiClient.TradeStatus> {
+  async *streamTradeStatus(): AsyncGenerator<XApiClient.TradeStatus> {
     yield* this.streamOperation(Constants.STREAM_TRADE_STATUS, 'getTradeStatus');
   }
 
@@ -561,7 +561,7 @@ export class XApiClient {
    * @see http://developers.xstore.pro/documentation/2.5.0#streamTrades
    * @yields Trade
    */
-  async* streamTrades(): AsyncGenerator<XApiClient.Trade> {
+  async *streamTrades(): AsyncGenerator<XApiClient.Trade> {
     yield* this.streamOperation(Constants.STREAM_TRADES, 'getTrades');
   }
 
@@ -583,17 +583,17 @@ export class XApiClient {
    * @return
    */
   tradeTransaction(
-      cmd: XApiClient.Command,
-      customComment: string,
-      expiration: number,
-      offset: number,
-      order: number,
-      price: number,
-      sl: number,
-      symbol: string,
-      tp: number,
-      type: XApiClient.TradeType,
-      volume: number
+    cmd: XApiClient.Command,
+    customComment: string,
+    expiration: number,
+    offset: number,
+    order: number,
+    price: number,
+    sl: number,
+    symbol: string,
+    tp: number,
+    type: XApiClient.TradeType,
+    volume: number
   ): Promise<XApiClient.Order> {
     return this.callOperation(Constants.TRADE_TRANSACTION, 'tradeTransaction', {
       tradeTransInfo: {
@@ -623,13 +623,13 @@ export class XApiClient {
    */
   async tradeTransactionStatus(order: number): Promise<XApiClient.TradeStatus> {
     const response = await this.callOperation(
-        Constants.TRADE_TRANSACTION_STATUS,
-        'tradeTransactionStatus',
-        {order: order}
+      Constants.TRADE_TRANSACTION_STATUS,
+      'tradeTransactionStatus',
+      {order: order}
     );
     if (response.ask !== response.bid) {
       throw new Error(
-          `Error retrieving transaction price: Ask was ${response.ask},` + `Bid was ${response.bid}`
+        `Error retrieving transaction price: Ask was ${response.ask},` + `Bid was ${response.bid}`
       );
     }
     response.price = response.ask;
@@ -641,10 +641,10 @@ export class XApiClient {
    * waits for a reply
    */
   private async callOperation(
-      customTag: string,
-      operationName: string,
-      args: Record<string, any> = {}
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    customTag: string,
+    operationName: string,
+    args: Record<string, any> = {}
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
   ): Promise<any> {
     this.checkLoggedIn();
 
@@ -695,7 +695,7 @@ export class XApiClient {
       console.log(`Socket ${name} disconnected`);
       if (closeEvent.code !== 1000) {
         throw new Error(
-            'The server unexpectedly closed the connection.' +
+          'The server unexpectedly closed the connection.' +
             `Error code ${closeEvent.code}. More info can be found in` +
             'https://www.iana.org/assignments/websocket/websocket.xml#close-code-number'
         );
@@ -732,23 +732,23 @@ export class XApiClient {
       const responseObj = JSON.parse(response);
       if (responseObj.status) {
         const returnData =
-            responseObj.customTag === Constants.LOGIN
-                ? responseObj.streamSessionId
-                : responseObj.returnData;
+          responseObj.customTag === Constants.LOGIN
+            ? responseObj.streamSessionId
+            : responseObj.returnData;
         this.#emitter.dispatchEvent(new CustomEvent(responseObj.customTag, {detail: returnData}));
         continue;
       }
       window.alert('xxx');
       const event = new CustomEvent<Record<string, object>>(
-          Constants.ERROR_PREFIX + responseObj.customTag,
-          {
-            detail: responseObj,
-          }
+        Constants.ERROR_PREFIX + responseObj.customTag,
+        {
+          detail: responseObj,
+        }
       );
       this.#emitter.dispatchEvent(event);
 
       console.warn(
-          `Call with customTag ${responseObj.customTag}` +
+        `Call with customTag ${responseObj.customTag}` +
           `Failed: ${responseObj.errorDescr} (code: ${responseObj.errorCode})`
       );
     }
@@ -792,10 +792,10 @@ export class XApiClient {
    * @yields the received data
    * @private
    */
-  private async* streamOperation(
-      customTag: string,
-      command: string,
-      args: object = {}
+  private async *streamOperation(
+    customTag: string,
+    command: string,
+    args: object = {}
   ): AsyncGenerator<any> {
     this.checkLoggedIn();
 
