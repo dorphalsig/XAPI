@@ -1,48 +1,26 @@
 {
   "name": "xapi-js",
-  "version": "1.0.7",
-  "description": "Javascript Implementation of the XTB/XopenCommerce API for automated trading",
-  "keywords": [],
-  "author": "David Sarmiento <dorphalsig [-at-NOSPAM] gmail [-DOT-NOSPAM] com>",
+  "version": "1.1.0",
+  "description": "Javascript (Node / ES2018) Implementation of the XTB/X Open Hub API for financial trading",
+  "main": "build/src/index.js",
+  "types": "build/src/index.d.ts",
+  "files": [
+    "build/src"
+  ],
   "license": "Apache-2.0",
-  "private": true,
-  "types": "index.d.ts",
-  "devDependencies": {
-    "babel-eslint": "^10.1.0",
-    "typescript": "^3.8.3",
-    "typescript-language-server": "^0.4.0"
-  },
-  "eslintConfig": {
-    "parser": "babel-eslint",
-    "parserOptions": {
-      "ecmaVersion": 2019,
-      "sourceType": "module",
-      "ecmaFeatures": {
-        "jsx": false
-      }
-    },
-    "ignorePatterns": [
-      "**/*.ts"
-    ],
-    "rules": {
-      "semi": "error"
-    },
-    "env": {
-      "node": false,
-      "browser": true,
-      "es6": true
-    }
-  },
-  "main": "index.js",
+  "keywords": [],
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "check": "gts check",
+    "clean": "gts clean",
+    "compile": "tsc",
+    "fix": "gts fix",
+    "prepare": "npm run compile",
+    "pretest": "npm run compile",
+    "posttest": "npm run check"
   },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/dorphalsig/XAPI.git"
-  },
-  "bugs": {
-    "url": "https://github.com/dorphalsig/XAPI/issues"
-  },
-  "homepage": "https://github.com/dorphalsig/XAPI#readme"
+  "devDependencies": {
+    "gts": "^2.0.0",
+    "typescript": "~3.8.0"
+  }
 }

@@ -1,4 +1,4 @@
-export let Constants: Readonly<{
+declare const Constants: {
     ERROR_PREFIX: string;
     LOGIN: string;
     LOGOUT: string;
@@ -34,4 +34,5 @@ export let Constants: Readonly<{
     PING: string;
     TRADE_TRANSACTION: string;
     TRADE_TRANSACTION_STATUS: string;
-}>;
+};
+export { Constants };

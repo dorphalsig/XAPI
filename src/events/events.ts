@@ -1,7 +1,7 @@
 /*
  *    Copyright 2020 David Sarmiento <dorphalsig@gmail.com>
  *
- *    Licensed under the Apache License, Version 2.0 (the "License");
+ *    Licensed under the Apache License, APIVersion 2.0 (the "License");
  *    you may not use this file except in compliance with the License.
  *    You may obtain a copy of the License at
  *
@@ -15,66 +15,50 @@
  */
 
 export default class EventTarget2 extends EventTarget {
-  /**
-   * @type {Set<string>}
-   */
-  #eventsListened;
+  #eventsListened: Set<string>;
 
   constructor() {
     super();
+    this.#eventsListened = new Set<string>();
   }
 
   /**
    * Stops iterating
    * @param {string} eventName
    */
-  off(eventName) {
+  off(eventName: string) {
     this.#eventsListened.delete(eventName);
   }
 
   /**
    * Returns an iterator that loops over caught events
-   * @param {string} eventName
-   * @param {object} options
    * @yields Promise<Event|CustomEvent>
    */
-  async* on(eventName, options) {
+  async* on(eventName: string, options?: AddEventListenerOptions): AsyncGenerator<Event> {
     if (this.#eventsListened.has(eventName)) {
       return;
     }
-    /**
-     * @type {*[]}
-     */
-    let results = [];
-    /**
-     * @type *
-     */
-    let resolve;
-    let promise = new Promise(r => resolve = r);
+    let results: Event[] = [];
+
+    let resolve: (value?: PromiseLike<Event> | Event) => void;
+
+    let promise = new Promise<Event>(r => (resolve = r));
     let done = false;
     this.#eventsListened.add(eventName);
 
-    if (typeof options === 'object' && Object.hasOwnProperty('once')) {
-      throw new Error('options.once is not supported. Use EventTarget2.once' +
-          ' instead');
+    if (typeof options === 'object' && typeof options.once !== 'undefined') {
+      throw new Error('options.once is not supported. Use EventTarget2.once instead');
     }
-
-    /**
-     *
-     * @param {Event|CustomEvent} event
-     */
-    const callback = event => {
-      results.push(event);
+    const callback = (evt: Event) => {
+      results.push(evt);
       resolve();
-      promise = new Promise(r => resolve = r);
+      promise = new Promise<Event>(r => (resolve = r));
     };
 
-    /**
-     * @type {CustomEvent}
-     */
     this.addEventListener('eventName', callback, options);
     while (!done) {
       await promise;
+      // @ts-ignore
       yield* results;
       results = [];
       done = !this.#eventsListened.has(eventName);
@@ -82,15 +66,9 @@ export default class EventTarget2 extends EventTarget {
     this.removeEventListener(eventName, callback);
   }
 
-  /**
-   * Wraps the event listener in a promise that will get resolved when it fires
-   * @param {string} eventName
-   * @return {Promise<Event|CustomEvent>}
-   */
-  once(eventName) {
+  once(eventName: string): Promise<Event> {
     return new Promise(resolve => {
       this.addEventListener(eventName, evt => resolve(evt));
     });
-
   }
 }
