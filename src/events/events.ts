@@ -34,7 +34,10 @@ export default class EventTarget2 extends EventTarget {
    * Returns an iterator that loops over caught events
    * @yields Promise<Event|CustomEvent>
    */
-  async *on(eventName: string, options?: AddEventListenerOptions): AsyncGenerator<Event> {
+  async *on(
+    eventName: string,
+    options?: AddEventListenerOptions
+  ): AsyncGenerator<Event, void, undefined> {
     if (this.#eventsListened.has(eventName)) {
       return;
     }
@@ -58,7 +61,6 @@ export default class EventTarget2 extends EventTarget {
     this.addEventListener('eventName', callback, options);
     while (!done) {
       await promise;
-      // @ts-ignore
       yield* results;
       results = [];
       done = !this.#eventsListened.has(eventName);
