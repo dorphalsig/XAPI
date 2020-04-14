@@ -7,9 +7,6 @@
   "types": "dist/index.d.ts",
   "bugs": "https://github.com/dorphalsig/xStation-js/issues",
   "repository": "github:dorphalsig/xStation-js",
-  "files": [
-    "dist"
-  ],
   "license": "Apache-2.0",
   "keywords": [
     "stocks",
