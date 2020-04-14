@@ -738,7 +738,7 @@ export class XApiClient {
         this.#emitter.dispatchEvent(new CustomEvent(responseObj.customTag, {detail: returnData}));
         continue;
       }
-      window.alert('xxx');
+
       const event = new CustomEvent<Record<string, object>>(
         Constants.ERROR_PREFIX + responseObj.customTag,
         {
