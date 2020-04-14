@@ -14,7 +14,7 @@
  *    limitations under the License.
  */
 
-import EventTarget2 from 'src/events/events';
+import EventTarget2 from '../../events/events';
 import {Config} from './config';
 import {Constants} from './x_api_constants';
 

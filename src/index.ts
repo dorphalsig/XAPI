@@ -1,7 +1,2 @@
-import {XApiClient} from 'brokers/xtb/x_api_client';
-import {Constants} from './brokers/xtb/x_api_constants';
-
-export const XApi = {
-  Client: XApiClient,
-  Constants: Constants,
-};
+export * from './brokers/xtb/x_api_client';
+export * from './brokers/xtb/x_api_constants';

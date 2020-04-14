@@ -1,14 +1,12 @@
 {
   "name": "xstation-js",
   "version": "1.1.1",
+  "author": "David Sarmiento <dorphalsig-at-gmail-dot-com>",
   "description": "Javascript (Node / ES2018) Implementation of the XTB/X Open Hub API for financial trading",
-  "main": "index.js",
-  "types": "index.d.ts",
-  "author": {
-    "name": "David Sarmiento",
-    "email": "dorphalsig at gmail dot com"
-  },
-
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "bugs": "https://github.com/dorphalsig/xStation-js/issues",
+  "repository": "github:dorphalsig/xStation-js",
   "files": [
     "dist"
   ],
