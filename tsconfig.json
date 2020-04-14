@@ -2,7 +2,6 @@
   "extends": "./node_modules/gts/tsconfig-google.json",
   "compilerOptions": {
     "outDir": ".",
-    "rootDir": "src/",
     "moduleResolution": "Node",
     "module": "ES6",
     "target": "ES2019",
