@@ -4,6 +4,7 @@
     "outDir": "dist",
     "moduleResolution": "classic",
     "module": "ES6",
+    "target": "ES2019",
     "lib": [
       "DOM",
       "ES2019"
