@@ -1,0 +1,19 @@
+{
+  "extends": "./node_modules/gts/tsconfig-google.json",
+  "compilerOptions": {
+    "rootDir": ".",
+    "outDir": "build",
+    "moduleResolution": "Node",
+    "module": "CommonJS",
+    "target": "ES2019",
+    "lib": [
+      
+      "ES2019"
+    ]
+
+  },
+  "include": [
+    "src/**/*.ts",
+    "test/**/*.ts"
+  ]
+}
