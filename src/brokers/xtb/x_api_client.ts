@@ -92,11 +92,11 @@ export class XApiClient {
    */
   async getChartLastRequest(
     period: XApiClient.Period,
-    start: number,
+    start: Date,
     symbol: string
   ): Promise<XApiClient.Candle[]> {
     const chartInfo = await this.callOperation(Constants.CHART_LAST_REQUEST, 'getCalendar', {
-      info: {period: period, start: start, symbol: symbol},
+      info: {period: period, start: start.getTime(), symbol: symbol},
     });
     return XApiClient.processChartRequest(chartInfo, symbol);
   }
@@ -119,8 +119,8 @@ export class XApiClient {
    * @see http://developers.xstore.pro/documentation/#getChartRangeRequest
    */
   async getChartRangeRequest(
-    start: number,
-    end: number,
+    start: Date,
+    end: Date,
     period: XApiClient.Period,
     symbol: string,
     ticks = 0
@@ -130,8 +130,8 @@ export class XApiClient {
       'getChartRangeRequest',
       {
         info: {
-          start: start,
-          end: end,
+          start: start.getTime(),
+          end: end.getTime(),
           period: period,
           symbol: symbol,
           ticks: ticks,
@@ -167,14 +167,14 @@ export class XApiClient {
 
   /**
    * Returns IBs data from the given time range.
-   * @param start (timestamp) Start of IBs history block
-   * @param end (timestamp) End of IBs history block
+   * @param start Start of IBs history block
+   * @param end  End of IBs history block
    * @return
    */
-  getIbsHistory(start: number, end: number): Promise<XApiClient.IB[]> {
+  getIbsHistory(start: Date, end: Date): Promise<XApiClient.IB[]> {
     return this.callOperation(Constants.IBS_HISTORY, 'getIbsHistory', {
-      end: end,
-      start: start,
+      end: end.getTime(),
+      start: start.getTime(),
     });
   }
 
@@ -209,14 +209,11 @@ export class XApiClient {
    * Returns news from trading server which were sent within specified Period
    * of time.
    * Note: streamNews is the preferred way of retrieving news data.
-   * @param start (timestamp)
-   * @param end (timestamp)
-   * @return
    */
-  getNews(start: number, end: number): Promise<XApiClient.News[]> {
+  getNews(start: Date, end: Date): Promise<XApiClient.News[]> {
     return this.callOperation(Constants.NEWS, 'getNews', {
-      start: start,
-      end: end,
+      start: start.getTime(),
+      end: end.getTime(),
     });
   }
 
@@ -324,14 +321,11 @@ export class XApiClient {
    * Returns array of user's trades which were closed within specified Period
    * of time.
    * Note: streamTrades is the preferred way of retrieving trades data.
-   * @param start (timestamp)
-   * @param end (timestamp)
-   * @return
    */
-  getTradesHistory(start: number, end: number): Promise<XApiClient.Trade[]> {
+  getTradesHistory(start: Date, end: Date): Promise<XApiClient.Trade[]> {
     return this.callOperation(Constants.TRADES_HISTORY, 'getTradesHistory', {
-      start: start,
-      end: end,
+      start: start.getTime(),
+      end: end.getTime(),
     });
   }
 
