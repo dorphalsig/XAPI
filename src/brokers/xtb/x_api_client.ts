@@ -267,8 +267,8 @@ export class XApiClient {
    * Returns information about symbol available for the user.
    * @return
    */
-  getSymbol(): Promise<XApiClient.TickerSymbol> {
-    return this.callOperation(Constants.SYMBOL, 'getSymbol');
+  getSymbol(symbol: string): Promise<XApiClient.TickerSymbol> {
+    return this.callOperation(Constants.SYMBOL, 'getSymbol', {symbol: symbol});
   }
 
   /**
@@ -421,7 +421,7 @@ export class XApiClient {
    * @param symbol
    */
   stopStreamCandles(symbol: string): void {
-    this.stopStreaming(Constants.STREAM_CANDLES, 'stopCandles');
+    this.stopStreaming(`${Constants.STREAM_CANDLES}_${symbol}`, 'stopCandles');
   }
 
   /**
@@ -472,8 +472,8 @@ export class XApiClient {
    * they are available in the system.
    * @yields
    */
-  streamBalance(): AsyncGenerator<XApiClient.Balance> {
-    return this.streamOperation('getBalance', Constants.STREAM_BALANCE);
+  async *streamBalance(): AsyncGenerator<XApiClient.Balance> {
+    yield* this.streamOperation('getBalance', Constants.STREAM_BALANCE);
   }
 
   /**
@@ -482,8 +482,8 @@ export class XApiClient {
    * @param symbol
    * @yields
    */
-  streamCandles(symbol: string): AsyncGenerator<XApiClient.Candle> {
-    return this.streamOperation('getCandles', Constants.STREAM_CANDLES, {
+  async *streamCandles(symbol: string): AsyncGenerator<XApiClient.Candle> {
+    yield* this.streamOperation('getCandles', Constants.STREAM_CANDLES, {
       symbol: symbol,
     });
   }
@@ -492,8 +492,8 @@ export class XApiClient {
    * Subscribes to 'keep alive' messages.
    * A new 'keep alive' message is sent by the API every 3 seconds
    */
-  streamKeepAlive(): AsyncGenerator<XApiClient.KeepAlive> {
-    return this.streamOperation('keepAlive', Constants.STREAM_KEEP_ALIVE);
+  async *streamKeepAlive(): AsyncGenerator<XApiClient.KeepAlive> {
+    yield* this.streamOperation('keepAlive', Constants.STREAM_KEEP_ALIVE);
   }
 
   /**
@@ -643,7 +643,7 @@ export class XApiClient {
   private async callOperation(
     customTag: string,
     operationName: string,
-    args: Record<string, any> = {}
+    args: Record<string, unknown> = {}
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
   ): Promise<any> {
     this.checkLoggedIn();
@@ -795,6 +795,7 @@ export class XApiClient {
     customTag: string,
     command: string,
     args: object = {}
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
   ): AsyncGenerator<any> {
     this.checkLoggedIn();
 
