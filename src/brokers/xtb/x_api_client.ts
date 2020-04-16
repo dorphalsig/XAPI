@@ -14,7 +14,8 @@
  *    limitations under the License.
  */
 
-import WebSocket = require('ws');
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+const WebSocket = require('ws');
 import {Config} from './config';
 import {Constants} from './x_api_constants';
 // eslint-disable-next-line @typescript-eslint/no-var-requires
@@ -31,12 +32,12 @@ const {on, EventEmitter, once} = require('events');
  */
 export class XApiClient {
   isLoggedIn = false;
-  #data: WeakMap<WebSocket, string>;
+  #data: WeakMap<typeof WebSocket, string>;
   #emitter: typeof EventEmitter;
   readonly #password: string;
   readonly #endpoint: string;
   readonly #streamEndpoint: string;
-  #sockets: Map<string, WebSocket>;
+  #sockets: Map<string, typeof WebSocket>;
   #streamSessionId: string;
   readonly #username: string;
 
@@ -693,13 +694,13 @@ export class XApiClient {
    *  Basically each streaming message has its own dedicated socket
    * @param endpoint WSS endpoint
    */
-  private connectSocket(name: string, endpoint: string = this.#endpoint): WebSocket {
+  private connectSocket(name: string, endpoint: string = this.#endpoint): typeof WebSocket {
     if (this.#sockets.has(name)) {
       console.log(`socket ${name} already exists. Doing nothing`);
       return this.#sockets.get(name)!;
     }
     const socket = new WebSocket(endpoint);
-    socket.onclose = closeEvent => {
+    socket.onclose = (closeEvent: {code: number}) => {
       console.log(`Socket ${name} disconnected`);
       if (closeEvent.code !== 1000) {
         throw new Error(
@@ -708,7 +709,7 @@ export class XApiClient {
             'https://www.iana.org/assignments/websocket/websocket.xml#close-code-number'
         );
       }
-      socket.on('message', data => this.parseResponse(data as string, socket));
+      socket.on('message', (data: string) => this.parseResponse(data, socket));
       this.#sockets.delete(name);
       this.#data.delete(socket);
     };
@@ -724,7 +725,7 @@ export class XApiClient {
    * @param socket socket which received the message
    * @private
    */
-  private parseResponse(rcvd: string, socket: WebSocket): void {
+  private parseResponse(rcvd: string, socket: typeof WebSocket): void {
     const responses = (this.#data.get(socket) + rcvd).trim().split('\n\n');
     // API messages are always terminated with two newlines
     const remainder = rcvd.lastIndexOf('\n\n') === rcvd.length - 2 ? '' : responses.pop();
