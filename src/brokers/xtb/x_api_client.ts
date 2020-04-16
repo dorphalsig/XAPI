@@ -21,7 +21,6 @@ import {Constants} from './x_api_constants';
 /**
  * Javascript Implementation of the API to call remote operations on the XTB/X
  * Open Hub xStation 5 platform
- * @version 2.5.0
  * @see http://developers.xstore.pro/documentation/2.5.0
  * @todo define a maximum amount of messages/s that can go in a single
  *     streaming socket and then have the sockets identify if a new one must be
@@ -67,7 +66,6 @@ export class XApiClient {
 
   /**
    * Returns array of all symbols available for the user.
-   * @return
    */
   getAllSymbols(): Promise<XApiClient.TickerSymbol[]> {
     return this.callOperation(Constants.ALL_SYMBOLS, 'getAllSymbols');
@@ -75,7 +73,6 @@ export class XApiClient {
 
   /**
    * Returns calendar with market events.
-   * @return
    */
   getCalendar(): Promise<XApiClient.Calendar[]> {
     return this.callOperation(Constants.CALENDAR, 'getCalendar');
@@ -84,11 +81,7 @@ export class XApiClient {
   /**
    * Returns chart info, from start date to the current time.
    * Note: streamCandles is the preferred way of retrieving current candle data.
-   * @param period
-   * @param start
-   * @param symbol
    * return {Promise<Candle[]>}
-   * @see http://developers.xstore.pro/documentation/#getChartLastRequest
    */
   async getChartLastRequest(
     period: XApiClient.Period,
@@ -110,12 +103,6 @@ export class XApiClient {
    *
    * Note: streamCandles is the preferred way of retrieving current candle
    * data.
-   * @param start timestamp
-   * @param end timestamp
-   * @param period
-   * @param symbol
-   * @param ticks
-   * @return
    * @see http://developers.xstore.pro/documentation/#getChartRangeRequest
    */
   async getChartRangeRequest(
@@ -145,9 +132,6 @@ export class XApiClient {
    * Returns calculation of commission and rate of exchange.
    * The value is calculated as expected value, and therefore might not be
    * perfectly accurate.
-   * @param tickerSymbol
-   * @param volume
-   * @return
    */
   getCommissionDef(tickerSymbol: string, volume: number): Promise<XApiClient.Commission> {
     return this.callOperation(Constants.COMMISSION_DEF, 'getCommissionDef', {
@@ -159,7 +143,6 @@ export class XApiClient {
   /**
    * Returns information about account currency, and account leverage
    * for the current API user
-   * @return
    */
   getCurrentUserData(): Promise<XApiClient.UserData> {
     return this.callOperation(Constants.CURRENT_USER_DATA, 'getCurrentUserData');
@@ -167,9 +150,6 @@ export class XApiClient {
 
   /**
    * Returns IBs data from the given time range.
-   * @param start Start of IBs history block
-   * @param end  End of IBs history block
-   * @return
    */
   getIbsHistory(start: Date, end: Date): Promise<XApiClient.IB[]> {
     return this.callOperation(Constants.IBS_HISTORY, 'getIbsHistory', {
@@ -181,7 +161,6 @@ export class XApiClient {
   /**
    * Returns various account indicators
    * streamBalance is the preferred way of retrieving account indicators
-   * @return
    */
   async getMarginLevel(): Promise<XApiClient.Balance> {
     const result = await this.callOperation(Constants.MARGIN_LEVEL, 'getMarginLevel');
@@ -194,9 +173,6 @@ export class XApiClient {
    * Returns expected margin for given instrument and volume.
    * The value is calculated as expected margin value, and therefore might not
    * be perfectly accurate.
-   * @param symbol
-   * @param volume
-   * @return
    */
   getMarginTrade(symbol: string, volume: number): Promise<XApiClient.Margin> {
     return this.callOperation(Constants.MARGIN_TRADE, 'getMarginTrade', {
@@ -221,12 +197,6 @@ export class XApiClient {
    * Calculates estimated profit for given deal data Should be used for
    * calculator-like apps only. Profit for opened transactions should be
    * taken from server, due to higher precision of server calculation.
-   * @param cmd Operation code
-   * @param symbol symbol
-   * @param volume volume
-   * @param openPrice theoretical open price of order*
-   * @param closePrice theoretical close price of order
-   * @return
    */
   getProfitCalculation(
     cmd: XApiClient.Command,
@@ -246,7 +216,6 @@ export class XApiClient {
 
   /**
    * Returns current time on trading server.
-   * @return
    */
   getServerTime(): Promise<XApiClient.ServerTime> {
     return this.callOperation(Constants.SERVER_TIME, 'getServerTime');
@@ -254,7 +223,6 @@ export class XApiClient {
 
   /**
    * Returns a list of step rules for DMAs
-   * @return
    */
   getStepRules(): Promise<XApiClient.StepRule[]> {
     return this.callOperation(Constants.STEP_RULES, 'getStepRules');
@@ -262,7 +230,6 @@ export class XApiClient {
 
   /**
    * Returns information about symbol available for the user.
-   * @return
    */
   getSymbol(symbol: string): Promise<XApiClient.TickerSymbol> {
     return this.callOperation(Constants.SYMBOL, 'getSymbol', {symbol: symbol});
@@ -273,14 +240,9 @@ export class XApiClient {
    * changed from given timestamp are returned. New timestamp obtained from
    * output will be used as an argument of the next call of this Command.
    * streamTickPrices is the preferred way of retrieving ticks data.
-   * @param level price level
-   * @param symbols Array of symbol names
-   * @param timestamp The time from which the most recent tick should
-   * be looked for. Historical prices cannot be obtained using this parameter.
-   * It can only be used to verify whether a price has changed since the given
-   * time.
-   * @return
-   * @see http://developers.xstore.pro/documentation/#getTickPrices
+   *  Historical prices cannot be obtained using this method. It can only be used
+   * to verify whether a price has changed since the given time.
+      * @see http://developers.xstore.pro/documentation/#getTickPrices
    */
   getTickPrices(
     level: number,
@@ -296,8 +258,6 @@ export class XApiClient {
 
   /**
    * Returns array of trades listed in orders argument.
-   * @param orders Array of orders (position numbers)
-   * @return
    */
   getTradeRecords(orders: number[]): Promise<XApiClient.Trade[]> {
     return this.callOperation(Constants.TRADE_RECORDS, 'getTradeRecords', {
@@ -308,8 +268,6 @@ export class XApiClient {
   /**
    * Returns array of user's trades
    * Note: streamTrades is the preferred way of retrieving trades data.
-   * @param openedOnly if true then only open trades will be returned
-   * @return
    */
   getTrades(openedOnly: boolean): Promise<XApiClient.Trade[]> {
     return this.callOperation(Constants.TRADES, 'getTrades', {
@@ -331,8 +289,6 @@ export class XApiClient {
 
   /**
    * Returns quotes and trading times.
-   * @param symbols
-   * @return
    */
   getTradingHours(symbols: string[]): Promise<XApiClient.TradingHours[]> {
     return this.callOperation(Constants.TRADING_HOURS, 'getTradingHours', {
@@ -342,7 +298,6 @@ export class XApiClient {
 
   /**
    * Returns the current API version.
-   * @return
    */
   getVersion(): Promise<XApiClient.APIVersion> {
     return this.callOperation(Constants.VERSION, 'getVersion');
@@ -412,7 +367,6 @@ export class XApiClient {
 
   /**
    * stops streaming candles for the specified symbol
-   * @param symbol
    */
   stopStreamCandles(symbol: string): void {
     this.stopStreaming(`${Constants.STREAM_CANDLES}_${symbol}`, 'stopCandles');
@@ -441,7 +395,6 @@ export class XApiClient {
 
   /**
    * stops streaming trades status for the specified symbol
-   * @param symbol
    */
   stopStreamTickPrices(symbol: string): void {
     this.stopStreaming(`${Constants.STREAM_TICK_PRICES}_${symbol}`, 'stopTickPrices');
@@ -464,7 +417,6 @@ export class XApiClient {
   /**
    * Allows to get actual account indicators values in real-time, as soon as
    * they are available in the system.
-   * @yields
    */
   async *streamBalance(): AsyncGenerator<XApiClient.Balance> {
     yield* this.streamOperation('getBalance', Constants.STREAM_BALANCE);
@@ -473,8 +425,6 @@ export class XApiClient {
   /**
    * Subscribes to API chart candles. The interval of every candle is 1 minute.
    * A new candle arrives every minute.
-   * @param symbol
-   * @yields
    */
   async *streamCandles(symbol: string): AsyncGenerator<XApiClient.Candle> {
     yield* this.streamOperation('getCandles', Constants.STREAM_CANDLES, {
@@ -492,7 +442,6 @@ export class XApiClient {
 
   /**
    * Subscribes to news.
-   * @return
    */
   async *streamNews(): AsyncGenerator<XApiClient.News> {
     yield* this.streamOperation(Constants.STREAM_NEWS, 'getNews');
@@ -511,7 +460,6 @@ export class XApiClient {
 
   /**
    * Subscribes to profits
-   * @yields Profit
    */
   async *streamProfits(): AsyncGenerator<XApiClient.Profit> {
     yield* this.streamOperation(Constants.STREAM_PROFITS, 'getProfits');
@@ -553,7 +501,6 @@ export class XApiClient {
    * system. Please beware that when multiple records are available, the order
    * in which they are received is not guaranteed.
    * @see http://developers.xstore.pro/documentation/2.5.0#streamTrades
-   * @yields Trade
    */
   async *streamTrades(): AsyncGenerator<XApiClient.Trade> {
     yield* this.streamOperation(Constants.STREAM_TRADES, 'getTrades');
@@ -562,19 +509,7 @@ export class XApiClient {
   /**
    * Starts trade transaction. tradeTransaction sends main transaction
    * information to the server.
-   * @param cmd Operation code
-   * @param customComment The value the customer may provide in order
    * to retrieve it later.
-   * @param expiration Pending order expiration time (timestamp)
-   * @param offset Trailing offset
-   * @param order 0 or position number for closing/modifications
-   * @param price Trade price
-   * @param sl Stop loss
-   * @param symbol Trade symbol
-   * @param tp Take profit
-   * @param type Trade transaction type
-   * @param volume Trade volume
-   * @return
    */
   tradeTransaction(
     cmd: XApiClient.Command,
@@ -612,8 +547,6 @@ export class XApiClient {
    * do that client must provide unique order taken from tradeTransaction.
    * Note: XApiClient#StreamTradeStatus is the preferred way of retrieving
    * transaction status data.
-   * @param order  order number from tradeTransaction
-   * @return
    */
   async tradeTransactionStatus(order: number): Promise<XApiClient.TradeStatus> {
     const response = await this.callOperation(
@@ -664,7 +597,6 @@ export class XApiClient {
 
   /**
    * checks if a user is logged in, throws error if not
-   * @private
    */
   private checkLoggedIn() {
     if (!this.isLoggedIn) {
@@ -674,10 +606,8 @@ export class XApiClient {
 
   /**
    * opens a socket and connects to the XTB/ XOpen Hub Server
-   * @param name the name of the socket, this will be used to route
-   * the async messages. Basically each streaming message has its own dedicated
+   * Basically each streaming message has its own dedicated
    *     socket
-   * @param endpoint WSS endpoint
    */
   private connectSocket(name: string, endpoint: string = this.#endpoint): WebSocket {
     if (this.#sockets.has(name)) {
@@ -710,9 +640,6 @@ export class XApiClient {
   /**
    * parses the response and publishes an event so the corresponding
    * handler can take care of it
-   * @param rcvd message
-   * @param socket socket which received the message
-   * @private
    */
   private parseResponse(rcvd: string, socket: WebSocket): void {
     const responses = (this.#data.get(socket) + rcvd).trim().split('\n\n');
@@ -749,11 +676,6 @@ export class XApiClient {
 
   /**
    * generic method to stop streaming a Command
-   * @param customTag
-   * @param stopCommand
-   * @param args
-   * @return
-   * @private
    */
   private stopStreaming(customTag: string, stopCommand: string, args: object = {}): boolean {
     const socket = this.#sockets.get(customTag);
@@ -779,11 +701,6 @@ export class XApiClient {
    * opens a socket and subscribes to a specific stream yielding its result
    * when the subscription is cancelled (see stopStreaming) it closes the
    * socket
-   * @param customTag
-   * @param command
-   * @param args the operation parameters
-   * @yields the received data
-   * @private
    */
   private async *streamOperation(
     customTag: string,
