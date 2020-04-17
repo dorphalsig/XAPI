@@ -48,10 +48,7 @@ export class XApiClient {
     this.#streamSessionId = '';
   }
 
-  private static processChartRequest(
-    chartInfo: XApiClient.ChartInfo,
-    symbol: string
-  ): XApiClient.Candle[] {
+  private static processChartRequest(chartInfo: ChartInfo, symbol: string): Candle[] {
     const candles = [];
     for (const response of chartInfo.rateInfos) {
       response.symbol = symbol;
@@ -67,15 +64,15 @@ export class XApiClient {
   /**
    * Returns array of all symbols available for the user.
    */
-  getAllSymbols(): Promise<XApiClient.TickerSymbol[]> {
-    return this.callOperation(Constants.ALL_SYMBOLS, 'getAllSymbols');
+  getAllSymbols(): Promise<TickerSymbol[]> {
+    return this.callOperation(Constants.ALL_SYMBOLS, 'getAllSymbols') as Promise<TickerSymbol[]>;
   }
 
   /**
    * Returns calendar with market events.
    */
-  getCalendar(): Promise<XApiClient.Calendar[]> {
-    return this.callOperation(Constants.CALENDAR, 'getCalendar');
+  getCalendar(): Promise<Calendar[]> {
+    return this.callOperation(Constants.CALENDAR, 'getCalendar') as Promise<Calendar[]>;
   }
 
   /**
@@ -83,14 +80,10 @@ export class XApiClient {
    * Note: streamCandles is the preferred way of retrieving current candle data.
    * return {Promise<Candle[]>}
    */
-  async getChartLastRequest(
-    period: XApiClient.Period,
-    start: Date,
-    symbol: string
-  ): Promise<XApiClient.Candle[]> {
-    const chartInfo = await this.callOperation(Constants.CHART_LAST_REQUEST, 'getCalendar', {
+  async getChartLastRequest(period: Period, start: Date, symbol: string): Promise<Candle[]> {
+    const chartInfo = (await this.callOperation(Constants.CHART_LAST_REQUEST, 'getCalendar', {
       info: {period: period, start: start.getTime(), symbol: symbol},
-    });
+    })) as ChartInfo;
     return XApiClient.processChartRequest(chartInfo, symbol);
   }
 
@@ -108,11 +101,11 @@ export class XApiClient {
   async getChartRangeRequest(
     start: Date,
     end: Date,
-    period: XApiClient.Period,
+    period: Period,
     symbol: string,
     ticks = 0
-  ): Promise<XApiClient.Candle[]> {
-    const chartInfo = await this.callOperation(
+  ): Promise<Candle[]> {
+    const chartInfo = (await this.callOperation(
       Constants.CHART_RANGE_REQUEST,
       'getChartRangeRequest',
       {
@@ -124,7 +117,7 @@ export class XApiClient {
           ticks: ticks,
         },
       }
-    );
+    )) as ChartInfo;
     return XApiClient.processChartRequest(chartInfo, symbol);
   }
 
@@ -133,40 +126,45 @@ export class XApiClient {
    * The value is calculated as expected value, and therefore might not be
    * perfectly accurate.
    */
-  getCommissionDef(tickerSymbol: string, volume: number): Promise<XApiClient.Commission> {
+  getCommissionDef(tickerSymbol: string, volume: number): Promise<Commission> {
     return this.callOperation(Constants.COMMISSION_DEF, 'getCommissionDef', {
       symbol: tickerSymbol,
       volume: volume,
-    });
+    }) as Promise<Commission>;
   }
 
   /**
    * Returns information about account currency, and account leverage
    * for the current API user
    */
-  getCurrentUserData(): Promise<XApiClient.UserData> {
-    return this.callOperation(Constants.CURRENT_USER_DATA, 'getCurrentUserData');
+  getCurrentUserData(): Promise<UserData> {
+    return this.callOperation(Constants.CURRENT_USER_DATA, 'getCurrentUserData') as Promise<
+      UserData
+    >;
   }
 
   /**
    * Returns IBs data from the given time range.
    */
-  getIbsHistory(start: Date, end: Date): Promise<XApiClient.IB[]> {
+  getIbsHistory(start: Date, end: Date): Promise<IB[]> {
     return this.callOperation(Constants.IBS_HISTORY, 'getIbsHistory', {
       end: end.getTime(),
       start: start.getTime(),
-    });
+    }) as Promise<IB[]>;
   }
 
   /**
    * Returns various account indicators
    * streamBalance is the preferred way of retrieving account indicators
    */
-  async getMarginLevel(): Promise<XApiClient.Balance> {
-    const result = await this.callOperation(Constants.MARGIN_LEVEL, 'getMarginLevel');
+  async getMarginLevel(): Promise<Balance> {
+    const result = (await this.callOperation(Constants.MARGIN_LEVEL, 'getMarginLevel')) as Record<
+      string,
+      string
+    >;
     result.marginFree = result.margin_free;
     result.marginLevel = result.margin_level;
-    return result;
+    return (result as unknown) as Promise<Balance>;
   }
 
   /**
@@ -174,11 +172,11 @@ export class XApiClient {
    * The value is calculated as expected margin value, and therefore might not
    * be perfectly accurate.
    */
-  getMarginTrade(symbol: string, volume: number): Promise<XApiClient.Margin> {
+  getMarginTrade(symbol: string, volume: number): Promise<Margin> {
     return this.callOperation(Constants.MARGIN_TRADE, 'getMarginTrade', {
       symbol: symbol,
       volume: volume,
-    });
+    }) as Promise<Margin>;
   }
 
   /**
@@ -186,11 +184,11 @@ export class XApiClient {
    * of time.
    * Note: streamNews is the preferred way of retrieving news data.
    */
-  getNews(start: Date, end: Date): Promise<XApiClient.News[]> {
+  getNews(start: Date, end: Date): Promise<News[]> {
     return this.callOperation(Constants.NEWS, 'getNews', {
       start: start.getTime(),
       end: end.getTime(),
-    });
+    }) as Promise<News[]>;
   }
 
   /**
@@ -199,40 +197,42 @@ export class XApiClient {
    * taken from server, due to higher precision of server calculation.
    */
   getProfitCalculation(
-    cmd: XApiClient.Command,
+    cmd: Command,
     symbol: string,
     volume: number,
     openPrice: number,
     closePrice: number
-  ): Promise<XApiClient.ProfitCalculation> {
+  ): Promise<ProfitCalculation> {
     return this.callOperation(Constants.PROFIT_CALCULATION, 'getProfitCalculation', {
       cmd: cmd,
       symbol: symbol,
       volume: volume,
       openPrice: openPrice,
       closePrice: closePrice,
-    });
+    }) as Promise<ProfitCalculation>;
   }
 
   /**
    * Returns current time on trading server.
    */
-  getServerTime(): Promise<XApiClient.ServerTime> {
-    return this.callOperation(Constants.SERVER_TIME, 'getServerTime');
+  getServerTime(): Promise<ServerTime> {
+    return this.callOperation(Constants.SERVER_TIME, 'getServerTime') as Promise<ServerTime>;
   }
 
   /**
    * Returns a list of step rules for DMAs
    */
-  getStepRules(): Promise<XApiClient.StepRule[]> {
-    return this.callOperation(Constants.STEP_RULES, 'getStepRules');
+  getStepRules(): Promise<StepRule[]> {
+    return this.callOperation(Constants.STEP_RULES, 'getStepRules') as Promise<StepRule[]>;
   }
 
   /**
    * Returns information about symbol available for the user.
    */
-  getSymbol(symbol: string): Promise<XApiClient.TickerSymbol> {
-    return this.callOperation(Constants.SYMBOL, 'getSymbol', {symbol: symbol});
+  getSymbol(symbol: string): Promise<TickerSymbol> {
+    return this.callOperation(Constants.SYMBOL, 'getSymbol', {symbol: symbol}) as Promise<
+      TickerSymbol
+    >;
   }
 
   /**
@@ -242,37 +242,33 @@ export class XApiClient {
    * streamTickPrices is the preferred way of retrieving ticks data.
    *  Historical prices cannot be obtained using this method. It can only be used
    * to verify whether a price has changed since the given time.
-      * @see http://developers.xstore.pro/documentation/#getTickPrices
+   * @see http://developers.xstore.pro/documentation/#getTickPrices
    */
-  getTickPrices(
-    level: number,
-    symbols: string,
-    timestamp: number
-  ): Promise<XApiClient.TickPrice[]> {
+  getTickPrices(level: number, symbols: string, timestamp: number): Promise<TickPrice[]> {
     return this.callOperation(Constants.TICK_PRICES, 'getTickPrices', {
       level: level,
       symbols: symbols,
       timestamp: timestamp,
-    });
+    }) as Promise<TickPrice[]>;
   }
 
   /**
    * Returns array of trades listed in orders argument.
    */
-  getTradeRecords(orders: number[]): Promise<XApiClient.Trade[]> {
+  getTradeRecords(orders: number[]): Promise<Trade[]> {
     return this.callOperation(Constants.TRADE_RECORDS, 'getTradeRecords', {
       orders: orders,
-    });
+    }) as Promise<Trade[]>;
   }
 
   /**
    * Returns array of user's trades
    * Note: streamTrades is the preferred way of retrieving trades data.
    */
-  getTrades(openedOnly: boolean): Promise<XApiClient.Trade[]> {
+  getTrades(openedOnly: boolean): Promise<Trade[]> {
     return this.callOperation(Constants.TRADES, 'getTrades', {
       openedOnly: openedOnly,
-    });
+    }) as Promise<Trade[]>;
   }
 
   /**
@@ -280,27 +276,27 @@ export class XApiClient {
    * of time.
    * Note: streamTrades is the preferred way of retrieving trades data.
    */
-  getTradesHistory(start: Date, end: Date): Promise<XApiClient.Trade[]> {
+  getTradesHistory(start: Date, end: Date): Promise<Trade[]> {
     return this.callOperation(Constants.TRADES_HISTORY, 'getTradesHistory', {
       start: start.getTime(),
       end: end.getTime(),
-    });
+    }) as Promise<Trade[]>;
   }
 
   /**
    * Returns quotes and trading times.
    */
-  getTradingHours(symbols: string[]): Promise<XApiClient.TradingHours[]> {
+  getTradingHours(symbols: string[]): Promise<TradingHours[]> {
     return this.callOperation(Constants.TRADING_HOURS, 'getTradingHours', {
       symbols: symbols,
-    });
+    }) as Promise<TradingHours[]>;
   }
 
   /**
    * Returns the current API version.
    */
-  getVersion(): Promise<XApiClient.APIVersion> {
-    return this.callOperation(Constants.VERSION, 'getVersion');
+  getVersion(): Promise<APIVersion> {
+    return this.callOperation(Constants.VERSION, 'getVersion') as Promise<APIVersion>;
   }
 
   /**
@@ -418,33 +414,35 @@ export class XApiClient {
    * Allows to get actual account indicators values in real-time, as soon as
    * they are available in the system.
    */
-  async *streamBalance(): AsyncGenerator<XApiClient.Balance> {
-    yield* this.streamOperation('getBalance', Constants.STREAM_BALANCE);
+  async *streamBalance(): AsyncGenerator<Balance> {
+    yield* this.streamOperation('getBalance', Constants.STREAM_BALANCE) as AsyncGenerator<Balance>;
   }
 
   /**
    * Subscribes to API chart candles. The interval of every candle is 1 minute.
    * A new candle arrives every minute.
    */
-  async *streamCandles(symbol: string): AsyncGenerator<XApiClient.Candle> {
+  async *streamCandles(symbol: string): AsyncGenerator<Candle> {
     yield* this.streamOperation('getCandles', Constants.STREAM_CANDLES, {
       symbol: symbol,
-    });
+    }) as AsyncGenerator<Candle>;
   }
 
   /**
    * Subscribes to 'keep alive' messages.
    * A new 'keep alive' message is sent by the API every 3 seconds
    */
-  async *streamKeepAlive(): AsyncGenerator<XApiClient.KeepAlive> {
-    yield* this.streamOperation('keepAlive', Constants.STREAM_KEEP_ALIVE);
+  async *streamKeepAlive(): AsyncGenerator<KeepAlive> {
+    yield* this.streamOperation('keepAlive', Constants.STREAM_KEEP_ALIVE) as AsyncGenerator<
+      KeepAlive
+    >;
   }
 
   /**
    * Subscribes to news.
    */
-  async *streamNews(): AsyncGenerator<XApiClient.News> {
-    yield* this.streamOperation(Constants.STREAM_NEWS, 'getNews');
+  async *streamNews(): AsyncGenerator<News> {
+    yield* this.streamOperation(Constants.STREAM_NEWS, 'getNews') as AsyncGenerator<News>;
   }
 
   /**
@@ -454,15 +452,15 @@ export class XApiClient {
    * traffic. It is recommended that any application that does not execute
    * other commands, should call this Command at least once every 10 minutes.
    */
-  async *streamPing(): AsyncGenerator<XApiClient.KeepAlive> {
-    yield* this.streamOperation(Constants.STREAM_PING, 'ping');
+  async *streamPing(): AsyncGenerator<KeepAlive> {
+    yield* this.streamOperation(Constants.STREAM_PING, 'ping') as AsyncGenerator<KeepAlive>;
   }
 
   /**
    * Subscribes to profits
    */
-  async *streamProfits(): AsyncGenerator<XApiClient.Profit> {
-    yield* this.streamOperation(Constants.STREAM_PROFITS, 'getProfits');
+  async *streamProfits(): AsyncGenerator<Profit> {
+    yield* this.streamOperation(Constants.STREAM_PROFITS, 'getProfits') as AsyncGenerator<Profit>;
   }
 
   /**
@@ -476,13 +474,17 @@ export class XApiClient {
   async *streamTickPrices(
     symbol: string,
     {minArrivalTime = 0, maxLevel}: {minArrivalTime: number; maxLevel: number}
-  ): AsyncGenerator<XApiClient.TickPrice> {
+  ): AsyncGenerator<TickPrice> {
     const params = {
       minArrivalTime: minArrivalTime,
       symbol: symbol,
       maxLevel: maxLevel,
     };
-    yield* this.streamOperation(Constants.STREAM_TICK_PRICES, 'streamTickPrices', params);
+    yield* this.streamOperation(
+      Constants.STREAM_TICK_PRICES,
+      'streamTickPrices',
+      params
+    ) as AsyncGenerator<TickPrice>;
   }
 
   /**
@@ -491,8 +493,10 @@ export class XApiClient {
    * available in the system. Please beware that when multiple records are
    * available, the order in which they are received is not guaranteed.
    */
-  async *streamTradeStatus(): AsyncGenerator<XApiClient.TradeStatus> {
-    yield* this.streamOperation(Constants.STREAM_TRADE_STATUS, 'getTradeStatus');
+  async *streamTradeStatus(): AsyncGenerator<TradeStatus> {
+    yield* this.streamOperation(Constants.STREAM_TRADE_STATUS, 'getTradeStatus') as AsyncGenerator<
+      TradeStatus
+    >;
   }
 
   /**
@@ -502,8 +506,8 @@ export class XApiClient {
    * in which they are received is not guaranteed.
    * @see http://developers.xstore.pro/documentation/2.5.0#streamTrades
    */
-  async *streamTrades(): AsyncGenerator<XApiClient.Trade> {
-    yield* this.streamOperation(Constants.STREAM_TRADES, 'getTrades');
+  async *streamTrades(): AsyncGenerator<Trade> {
+    yield* this.streamOperation(Constants.STREAM_TRADES, 'getTrades') as AsyncGenerator<Trade>;
   }
 
   /**
@@ -512,7 +516,7 @@ export class XApiClient {
    * to retrieve it later.
    */
   tradeTransaction(
-    cmd: XApiClient.Command,
+    cmd: Command,
     customComment: string,
     expiration: number,
     offset: number,
@@ -521,9 +525,9 @@ export class XApiClient {
     sl: number,
     symbol: string,
     tp: number,
-    type: XApiClient.TradeType,
+    type: TradeType,
     volume: number
-  ): Promise<XApiClient.Order> {
+  ): Promise<Order> {
     return this.callOperation(Constants.TRADE_TRANSACTION, 'tradeTransaction', {
       tradeTransInfo: {
         cmd: cmd,
@@ -538,7 +542,7 @@ export class XApiClient {
         type: type,
         volume: volume,
       },
-    });
+    }) as Promise<Order>;
   }
 
   /**
@@ -548,19 +552,19 @@ export class XApiClient {
    * Note: XApiClient#StreamTradeStatus is the preferred way of retrieving
    * transaction status data.
    */
-  async tradeTransactionStatus(order: number): Promise<XApiClient.TradeStatus> {
-    const response = await this.callOperation(
+  async tradeTransactionStatus(order: number): Promise<TradeStatus> {
+    const response = (await this.callOperation(
       Constants.TRADE_TRANSACTION_STATUS,
       'tradeTransactionStatus',
       {order: order}
-    );
+    )) as Record<string, string>;
     if (response.ask !== response.bid) {
       throw new Error(
         `Error retrieving transaction price: Ask was ${response.ask},` + `Bid was ${response.bid}`
       );
     }
     response.price = response.ask;
-    return response;
+    return (response as unknown) as Promise<TradeStatus>;
   }
 
   /**
@@ -571,20 +575,11 @@ export class XApiClient {
     customTag: string,
     operationName: string,
     args: Record<string, unknown> = {}
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  ): Promise<any> {
+  ): Promise<unknown> {
     this.checkLoggedIn();
-
-    interface Payload {
-      command: string;
-      customTag: string;
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      arguments?: Record<string, any>;
-    }
-
-    const payload: Payload = {command: operationName, customTag: customTag};
+    let payload = {command: operationName, customTag: customTag};
     if (Object.keys(args).length !== 0 || args.constructor !== Object) {
-      payload.arguments = args;
+      payload = {...payload, ...{arguments: args}};
     }
     const socket = this.#sockets.get('operation');
     if (typeof socket === 'undefined') {
@@ -706,8 +701,7 @@ export class XApiClient {
     customTag: string,
     command: string,
     args: object = {}
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  ): AsyncGenerator<any> {
+  ): AsyncGenerator<unknown> {
     this.checkLoggedIn();
 
     if (this.#sockets.has(customTag)) {
@@ -726,495 +720,493 @@ export class XApiClient {
   }
 }
 
-// eslint-disable-next-line no-redeclare,@typescript-eslint/no-namespace
-export declare namespace XApiClient {
-  export enum Period {
-    /** 1 minute */
-    PERIOD_M1 = 1,
-    /** 5 minutes */
-    PERIOD_M5 = 5,
-    /** 15 minutes */
-    PERIOD_M15 = 15,
-    /** 30 minutes */
-    PERIOD_M30 = 30,
-    /** 1 hour */
-    PERIOD_H1 = 60,
-    /** 4 hours */
-    PERIOD_H4 = 240,
-    /** 1 day */
-    PERIOD_D1 = 1440,
-    /** 1 week */
-    PERIOD_W1 = 10080,
-    /** 30 days */
-    PERIOD_MN1 = 43200,
-  }
+export enum Period {
+  /** 1 minute */
+  PERIOD_M1 = 1,
+  /** 5 minutes */
+  PERIOD_M5 = 5,
+  /** 15 minutes */
+  PERIOD_M15 = 15,
+  /** 30 minutes */
+  PERIOD_M30 = 30,
+  /** 1 hour */
+  PERIOD_H1 = 60,
+  /** 4 hours */
+  PERIOD_H4 = 240,
+  /** 1 day */
+  PERIOD_D1 = 1440,
+  /** 1 week */
+  PERIOD_W1 = 10080,
+  /** 30 days */
+  PERIOD_MN1 = 43200,
+}
 
-  export enum Command {
-    BUY = 0,
-    SELL = 1,
-    BUY_LIMIT = 2,
-    SELL_LIMIT = 3,
-    BUY_STOP = 4,
-    SELL_STOP = 5,
-    BALANCE = 6,
-    CREDIT = 7,
-  }
+export enum Command {
+  BUY = 0,
+  SELL = 1,
+  BUY_LIMIT = 2,
+  SELL_LIMIT = 3,
+  BUY_STOP = 4,
+  SELL_STOP = 5,
+  BALANCE = 6,
+  CREDIT = 7,
+}
 
-  export enum QuoteId {
-    FIXED = 1,
-    FLOAT = 2,
-    DEPTH = 3,
-    CROSS = 4,
-  }
+export enum QuoteId {
+  FIXED = 1,
+  FLOAT = 2,
+  DEPTH = 3,
+  CROSS = 4,
+}
 
-  export enum StreamTradeStatus {
-    ERROR = 0,
-    PENDING = 1,
-    ACCEPTED = 3,
-    REJECTED = 4,
-  }
+export enum StreamTradeStatus {
+  ERROR = 0,
+  PENDING = 1,
+  ACCEPTED = 3,
+  REJECTED = 4,
+}
 
-  export enum StreamTradesState {
-    MODIFIED = 'modified',
-    DELETED = 'deleted',
-  }
+export enum StreamTradesState {
+  MODIFIED = 'modified',
+  DELETED = 'deleted',
+}
 
-  export enum TradeType {
-    OPEN = 0,
-    PENDING = 1,
-    CLOSE = 2,
-    MODIFY = 3,
-    DELETE = 4,
-  }
+export enum TradeType {
+  OPEN = 0,
+  PENDING = 1,
+  CLOSE = 2,
+  MODIFY = 3,
+  DELETE = 4,
+}
 
-  export class Balance {
-    /** balance in account currency */
-    balance: number;
-    /** credit in account currency */
-    credit: number;
-    /** user currency  (only in getMarginLevel) */
-    currency?: string;
-    /** sum of balance and all profits in account currency */
-    equity: number;
-    /** margin requirements */
-    margin: number;
-    /** free margin */
-    marginFree: number;
-    /** margin level percentage */
-    marginLevel: number;
-  }
+export interface Balance {
+  /** balance in account currency */
+  balance: number;
+  /** credit in account currency */
+  credit: number;
+  /** user currency  (only in getMarginLevel) */
+  currency?: string;
+  /** sum of balance and all profits in account currency */
+  equity: number;
+  /** margin requirements */
+  margin: number;
+  /** free margin */
+  marginFree: number;
+  /** margin level percentage */
+  marginLevel: number;
+}
 
-  export class News {
-    /** Body */
-    body: string;
-    /** News key */
-    key: string;
-    /** Time (timestamp) */
-    time: number;
-    /** News title */
-    title: string;
-  }
+export interface News {
+  /** Body */
+  body: string;
+  /** News key */
+  key: string;
+  /** Time (timestamp) */
+  time: number;
+  /** News title */
+  title: string;
+}
 
-  export class TickPrice {
-    /** Ask price in base currency */
-    ask: number;
-    /** Number of available lots to buy at given price or null if not applicable */
-    askVolume: number;
-    /** Bid price in base currency */
-    bid: number;
-    /** Number of available lots to buy at given price or null if not applicable */
-    bidVolume: number;
-    /** The highest price of the day in base currency */
-    high: number;
-    /** Price level */
-    level: number;
-    /** The lowest price of the day in base currency */
-    low: number;
-    /** Source of price, detailed description below */
-    quoteId?: XApiClient.QuoteId;
-    /** The difference between raw ask and bid prices */
-    spreadRaw: number;
-    /** Spread representation */
-    spreadTable: number;
-    /** Symbol */
-    symbol: string;
-    /** Timestamp */
-    timestamp: number;
-  }
+export interface TickPrice {
+  /** Ask price in base currency */
+  ask: number;
+  /** Number of available lots to buy at given price or null if not applicable */
+  askVolume: number;
+  /** Bid price in base currency */
+  bid: number;
+  /** Number of available lots to buy at given price or null if not applicable */
+  bidVolume: number;
+  /** The highest price of the day in base currency */
+  high: number;
+  /** Price level */
+  level: number;
+  /** The lowest price of the day in base currency */
+  low: number;
+  /** Source of price, detailed description below */
+  quoteId?: QuoteId;
+  /** The difference between raw ask and bid prices */
+  spreadRaw: number;
+  /** Spread representation */
+  spreadTable: number;
+  /** Symbol */
+  symbol: string;
+  /** Timestamp */
+  timestamp: number;
+}
 
-  export class Trade {
-    /** Close price in base currency */
-    close_price: number;
-    /** Null if order is not closed */
-    close_time?: number;
-    /** Closed */
-    closed: boolean;
-    /** Operation code */
-    cmd: XApiClient.Command;
-    /** Comment */
-    comment: string;
-    /** Commission in account currency, null if not applicable */
-    commission?: number;
-    /** The value the customer may provide in order to retrieve it later. */
-    customComment?: string;
-    /** Number of decimal places */
-    digits: number;
-    /** Null if order is not closed */
-    expiration?: number;
-    /** Margin rate */
-    margin_rate: number;
-    /** Trailing offset */
-    offset: number;
-    /** Open price in base currency */
-    open_price: number;
-    /** Open time */
-    open_time: number;
-    /** Order number for opened transaction */
-    order: number;
-    /** Transaction id */
-    order2: number;
-    /** Position number (if type is 0 and 2) or transaction parameter (if type is 1) */
-    position: number;
-    /** null unless the trade is closed (type=2) or opened (type=0) */
-    profit?: number;
-    /** Zero if stop loss is not set (in base currency) */
-    sl: number;
-    /** Trade state, should be used for detecting pending order's cancellation (only in streamTrades) */
-    state?: string;
-    /** Storage */
-    storage: number;
-    /** Symbol */
-    symbol: string;
-    /** Zero if take profit is not set (in base currency) */
-    tp: number;
-    /** type (only in streamTrades) */
-    type?: number;
-    /** Volume in lots */
-    volume: number;
-    /** Timestamp (only in getTrades) */
-    timestamp?: number;
-    nominalValue: number;
-    spread: number;
-    taxes: number;
-  }
+export interface Trade {
+  /** Close price in base currency */
+  close_price: number;
+  /** Null if order is not closed */
+  close_time?: number;
+  /** Closed */
+  closed: boolean;
+  /** Operation code */
+  cmd: Command;
+  /** Comment */
+  comment: string;
+  /** Commission in account currency, null if not applicable */
+  commission?: number;
+  /** The value the customer may provide in order to retrieve it later. */
+  customComment?: string;
+  /** Number of decimal places */
+  digits: number;
+  /** Null if order is not closed */
+  expiration?: number;
+  /** Margin rate */
+  margin_rate: number;
+  /** Trailing offset */
+  offset: number;
+  /** Open price in base currency */
+  open_price: number;
+  /** Open time */
+  open_time: number;
+  /** Order number for opened transaction */
+  order: number;
+  /** Transaction id */
+  order2: number;
+  /** Position number (if type is 0 and 2) or transaction parameter (if type is 1) */
+  position: number;
+  /** null unless the trade is closed (type=2) or opened (type=0) */
+  profit?: number;
+  /** Zero if stop loss is not set (in base currency) */
+  sl: number;
+  /** Trade state, should be used for detecting pending order's cancellation (only in streamTrades) */
+  state?: string;
+  /** Storage */
+  storage: number;
+  /** Symbol */
+  symbol: string;
+  /** Zero if take profit is not set (in base currency) */
+  tp: number;
+  /** type (only in streamTrades) */
+  type?: number;
+  /** Volume in lots */
+  volume: number;
+  /** Timestamp (only in getTrades) */
+  timestamp?: number;
+  nominalValue: number;
+  spread: number;
+  taxes: number;
+}
 
-  export class Profit {
-    /** Order number */
-    order: number;
-    /** Transaction ID */
-    order2: number;
-    /** Position number */
-    position: number;
-    /** Profit in account currency */
-    profit: number;
-  }
+export interface Profit {
+  /** Order number */
+  order: number;
+  /** Transaction ID */
+  order2: number;
+  /** Position number */
+  position: number;
+  /** Profit in account currency */
+  profit: number;
+}
 
-  export class KeepAlive {
-    /** Current Timestamp */
-    timestamp: number;
-  }
+export interface KeepAlive {
+  /** Current Timestamp */
+  timestamp: number;
+}
 
-  export class TickerSymbol {
-    /** Bid price in base currency */
-    bid: number;
-    /** Ask price in base currency */
-    ask: number;
-    /** Category name */
-    categoryName: string;
-    /** Size of 1 lot */
-    contractSize: number;
-    /** Currency */
-    currency: string;
-    /** Indicates whether the symbol represents a currency pair */
-    currencyPair: boolean;
-    /** The currency of calculated profit */
-    currencyProfit: string;
-    /** Description */
-    description: string;
-    /** Null if not applicable */
-    expiration: number;
-    /** Symbol group name */
-    groupName: string;
-    /** The highest price of the day in base currency */
-    high: number;
-    /** Initial margin for 1 lot order, used for profit/margin calculation */
-    initialMargin: number;
-    /** Maximum instant volume multiplied by 100 (in lots) */
-    instantMaxVolume: number;
-    /** Symbol leverage */
-    leverage: number;
-    /** Long only */
-    longOnly: boolean;
-    /** Maximum size of trade */
-    lotMax: number;
-    /** Minimum size of trade */
-    lotMin: number;
-    /** A value of minimum step by which the size of trade can be changed (within lotMin - lotMax range) */
-    lotStep: number;
-    /** The lowest price of the day in base currency */
-    low: number;
-    /** Used for profit calculation */
-    marginHedged: number;
-    /** For margin calculation */
-    marginHedgedStrong: boolean;
-    /** For margin calculation, null if not applicable */
-    marginMaintenance: number;
-    /** For margin calculation */
-    marginMode: number;
-    /** Percentage */
-    percentage: number;
-    /** Number of symbol's pip decimal places */
-    pipsPrecision: number;
-    /** Number of symbol's price decimal places */
-    precision: number;
-    /** For profit calculation */
-    profitMode: number;
-    /** Source of price */
-    quoteId: number;
-    /** Indicates whether short selling is allowed on the instrument */
-    shortSelling: boolean;
-    /** The difference between raw ask and bid prices */
-    spreadRaw: number;
-    /** Spread representation */
-    spreadTable: number;
-    /** Null if not applicable */
-    starting: number;
-    /** Appropriate step rule ID from getStepRules Command response */
-    stepRuleId: number;
-    /** Minimal distance (in pips) from the current price where the stopLoss/takeProfit can be set */
-    stopsLevel: number;
-    /** number when additional swap is accounted for weekend */
-    swap_rollover3days: number;
-    /** Indicates whether swap value is added to position on end of day */
-    swapEnable: boolean;
-    /** Swap value for long positions in pips */
-    swapLong: number;
-    /** Swap value for short positions in pips */
-    swapShort: number;
-    /** Type of swap calculated */
-    swapType: number;
-    /** Symbol name */
-    symbol: string;
-    /** Smallest possible price change, used for profit/margin calculation, null if not applicable */
-    tickSize: number;
-    /** Value of smallest possible price change (in base currency), used for profit/margin calculation, null if not applicable */
-    tickValue: number;
-    /** Ask & bid tick number */
-    number: number;
-    /** number in String */
-    numberString: string;
-    /** Indicates whether trailing stop (offset) is applicable to the instrument. */
-    trailingEnabled: boolean;
-    /** Instrument export class number */
-    type: number;
-  }
+export interface TickerSymbol {
+  /** Bid price in base currency */
+  bid: number;
+  /** Ask price in base currency */
+  ask: number;
+  /** Category name */
+  categoryName: string;
+  /** Size of 1 lot */
+  contractSize: number;
+  /** Currency */
+  currency: string;
+  /** Indicates whether the symbol represents a currency pair */
+  currencyPair: boolean;
+  /** The currency of calculated profit */
+  currencyProfit: string;
+  /** Description */
+  description: string;
+  /** Null if not applicable */
+  expiration: number;
+  /** Symbol group name */
+  groupName: string;
+  /** The highest price of the day in base currency */
+  high: number;
+  /** Initial margin for 1 lot order, used for profit/margin calculation */
+  initialMargin: number;
+  /** Maximum instant volume multiplied by 100 (in lots) */
+  instantMaxVolume: number;
+  /** Symbol leverage */
+  leverage: number;
+  /** Long only */
+  longOnly: boolean;
+  /** Maximum size of trade */
+  lotMax: number;
+  /** Minimum size of trade */
+  lotMin: number;
+  /** A value of minimum step by which the size of trade can be changed (within lotMin - lotMax range) */
+  lotStep: number;
+  /** The lowest price of the day in base currency */
+  low: number;
+  /** Used for profit calculation */
+  marginHedged: number;
+  /** For margin calculation */
+  marginHedgedStrong: boolean;
+  /** For margin calculation, null if not applicable */
+  marginMaintenance: number;
+  /** For margin calculation */
+  marginMode: number;
+  /** Percentage */
+  percentage: number;
+  /** Number of symbol's pip decimal places */
+  pipsPrecision: number;
+  /** Number of symbol's price decimal places */
+  precision: number;
+  /** For profit calculation */
+  profitMode: number;
+  /** Source of price */
+  quoteId: number;
+  /** Indicates whether short selling is allowed on the instrument */
+  shortSelling: boolean;
+  /** The difference between raw ask and bid prices */
+  spreadRaw: number;
+  /** Spread representation */
+  spreadTable: number;
+  /** Null if not applicable */
+  starting: number;
+  /** Appropriate step rule ID from getStepRules Command response */
+  stepRuleId: number;
+  /** Minimal distance (in pips) from the current price where the stopLoss/takeProfit can be set */
+  stopsLevel: number;
+  /** number when additional swap is accounted for weekend */
+  swap_rollover3days: number;
+  /** Indicates whether swap value is added to position on end of day */
+  swapEnable: boolean;
+  /** Swap value for long positions in pips */
+  swapLong: number;
+  /** Swap value for short positions in pips */
+  swapShort: number;
+  /** Type of swap calculated */
+  swapType: number;
+  /** Symbol name */
+  symbol: string;
+  /** Smallest possible price change, used for profit/margin calculation, null if not applicable */
+  tickSize: number;
+  /** Value of smallest possible price change (in base currency), used for profit/margin calculation, null if not applicable */
+  tickValue: number;
+  /** Ask & bid tick number */
+  number: number;
+  /** number in String */
+  numberString: string;
+  /** Indicates whether trailing stop (offset) is applicable to the instrument. */
+  trailingEnabled: boolean;
+  /** Instrument export interface number */
+  type: number;
+}
 
-  export class Calendar {
-    /** Two letter country code */
-    country: string;
-    /** Market value (current), empty before time of release of this value (time from "time" record) */
-    current: string;
-    /** Forecasted value */
-    forecast: string;
-    /** Impact on market */
-    impact: string;
-    /** Information period */
-    period: string;
-    /** Value from previous information release */
-    previous: string;
-    /** Time, when the information will be released (in this time empty "current" value should be changed with exact released value) */
-    time: number;
-    /** Name of the indicator for which values will be released */
-    title: string;
-  }
+export interface Calendar {
+  /** Two letter country code */
+  country: string;
+  /** Market value (current), empty before time of release of this value (time from "time" record) */
+  current: string;
+  /** Forecasted value */
+  forecast: string;
+  /** Impact on market */
+  impact: string;
+  /** Information period */
+  period: string;
+  /** Value from previous information release */
+  previous: string;
+  /** Time, when the information will be released (in this time empty "current" value should be changed with exact released value) */
+  time: number;
+  /** Name of the indicator for which values will be released */
+  title: string;
+}
 
-  export class ChartInfoRecord {
-    digits: number;
-    rateInfos: RateInfoRecord[];
-  }
+export interface ChartInfoRecord {
+  digits: number;
+  rateInfos: RateInfoRecord[];
+}
 
-  export class Commission {
-    /** calculated commission in account currency, could be null if not applicable */
-    commission: number;
-    /** rate of exchange between account currency and instrument base currency, could be null if not applicable */
-    rateOfExchange?: number;
-  }
+export interface Commission {
+  /** calculated commission in account currency, could be null if not applicable */
+  commission: number;
+  /** rate of exchange between account currency and instrument base currency, could be null if not applicable */
+  rateOfExchange?: number;
+}
 
-  export class UserData {
-    /** Unit the account is assigned to. */
-    companyUnit: number;
-    /** account currency */
-    currency: string;
-    /** group */
-    group: string;
-    /** Indicates whether this account is an IB account. */
-    ibAccount: boolean;
-    /** The factor used for margin calculations. The actual value of leverage can be calculated by dividing this value by 100. */
-    leverageMultiplier: number;
-    /** spreadType, null if not applicable */
-    spreadType: string;
-    /** Indicates whether this account is enabled to use trailing stop. */
-    trailingStop: boolean;
-  }
+export interface UserData {
+  /** Unit the account is assigned to. */
+  companyUnit: number;
+  /** account currency */
+  currency: string;
+  /** group */
+  group: string;
+  /** Indicates whether this account is an IB account. */
+  ibAccount: boolean;
+  /** The factor used for margin calculations. The actual value of leverage can be calculated by dividing this value by 100. */
+  leverageMultiplier: number;
+  /** spreadType, null if not applicable */
+  spreadType: string;
+  /** Indicates whether this account is enabled to use trailing stop. */
+  trailingStop: boolean;
+}
 
-  export class IB {
-    /** IB close price or null if not allowed to view */
-    closePrice?: number;
-    /** IB user login or null if not allowed to view */
-    login?: string;
-    /** IB nominal or null if not allowed to view */
-    nominal?: number;
-    /** IB open price or null if not allowed to view */
-    openPrice?: number;
-    /** Operation code or null if not allowed to view */
-    side?: number;
-    /** IB user surname or null if not allowed to view */
-    surname?: string;
-    /** Symbol or null if not allowed to view */
-    symbol?: string;
-    /** Time the record was created or null if not allowed to view */
-    timestamp?: number;
-    /**  Volume in lots or null if not allowed to view */
-    volume?: number;
-  }
+// eslint-disable-next-line @typescript-eslint/interface-name-prefix
+export interface IB {
+  /** IB close price or null if not allowed to view */
+  closePrice?: number;
+  /** IB user login or null if not allowed to view */
+  login?: string;
+  /** IB nominal or null if not allowed to view */
+  nominal?: number;
+  /** IB open price or null if not allowed to view */
+  openPrice?: number;
+  /** Operation code or null if not allowed to view */
+  side?: number;
+  /** IB user surname or null if not allowed to view */
+  surname?: string;
+  /** Symbol or null if not allowed to view */
+  symbol?: string;
+  /** Time the record was created or null if not allowed to view */
+  timestamp?: number;
+  /**  Volume in lots or null if not allowed to view */
+  volume?: number;
+}
 
-  export class Margin {
-    margin: number;
-  }
+export interface Margin {
+  margin: number;
+}
 
-  export class NewsTopicRecord {
-    /** Body */
-    body: string;
-    /** Body length */
-    bodylen: number;
-    /** News key */
-    key: string;
-    /** Time (timestamp) */
-    time: number;
-    /** Time string */
-    timeString: string;
-    /** News title */
-    title: string;
-  }
+export interface NewsTopicRecord {
+  /** Body */
+  body: string;
+  /** Body length */
+  bodylen: number;
+  /** News key */
+  key: string;
+  /** Time (timestamp) */
+  time: number;
+  /** Time string */
+  timeString: string;
+  /** News title */
+  title: string;
+}
 
-  export class ProfitCalculation {
-    profit: number;
-  }
+export interface ProfitCalculation {
+  profit: number;
+}
 
-  export class Order {
-    order: number;
-  }
+export interface Order {
+  order: number;
+}
 
-  export class TradeTransaction {
-    /** Operation code */
-    cmd: number;
-    /** The value the customer may provide in order to retrieve it later. */
-    customComment: string;
-    /** Pending order expiration time */
-    expiration: number;
-    /** Trailing offset */
-    offset: number;
-    /** 0 or position number for closing/modifications */
-    order: number;
-    /** Trade price */
-    price: number;
-    /** Stop loss */
-    sl: number;
-    /** Trade symbol */
-    symbol: string;
-    /** Take profit */
-    tp: number;
-    /** Trade transaction type */
-    type: number;
-    /** Trade volume */
-    volume: number;
-  }
+export interface TradeTransaction {
+  /** Operation code */
+  cmd: number;
+  /** The value the customer may provide in order to retrieve it later. */
+  customComment: string;
+  /** Pending order expiration time */
+  expiration: number;
+  /** Trailing offset */
+  offset: number;
+  /** 0 or position number for closing/modifications */
+  order: number;
+  /** Trade price */
+  price: number;
+  /** Stop loss */
+  sl: number;
+  /** Trade symbol */
+  symbol: string;
+  /** Take profit */
+  tp: number;
+  /** Trade transaction type */
+  type: number;
+  /** Trade volume */
+  volume: number;
+}
 
-  export class ServerTime {
-    /** Timestamp */
-    timstamp: number;
-    /** Textual representation of the timestamp */
-    timeString: string;
-  }
+export interface ServerTime {
+  /** Timestamp */
+  timstamp: number;
+  /** Textual representation of the timestamp */
+  timeString: string;
+}
 
-  export class StepRule {
-    /** Step rule ID */
-    id: number;
-    /** Step rule name */
-    name: string;
-    steps: Step[];
-  }
+export interface StepRule {
+  /** Step rule ID */
+  id: number;
+  /** Step rule name */
+  name: string;
+  steps: Step[];
+}
 
-  export class Step {
-    /** Lower border of the volume range */
-    fromValue: number;
-    /** lotStep value in the given volume range */
-    step: number;
-  }
+export interface Step {
+  /** Lower border of the volume range */
+  fromValue: number;
+  /** lotStep value in the given volume range */
+  step: number;
+}
 
-  export class TradingHours {
-    /** Quotes records */
-    quotes: OperatingTime[];
-    /** Symbol */
-    symbol: string;
-    /** of Trading records */
-    trading: OperatingTime[];
-  }
+export interface TradingHours {
+  /** Quotes records */
+  quotes: OperatingTime[];
+  /** Symbol */
+  symbol: string;
+  /** of Trading records */
+  trading: OperatingTime[];
+}
 
-  export class OperatingTime {
-    /** Day of week (1 = Monday, 7 = Sunday) */
-    day: number;
-    /** Start time in ms from 00:00 CET / CEST (timestamp) */
-    fromT: number;
-    /** End time in ms from 00:00 CET / CEST (timestamp) */
-    toT: number;
-  }
+export interface OperatingTime {
+  /** Day of week (1 = Monday, 7 = Sunday) */
+  day: number;
+  /** Start time in ms from 00:00 CET / CEST (timestamp) */
+  fromT: number;
+  /** End time in ms from 00:00 CET / CEST (timestamp) */
+  toT: number;
+}
 
-  export class TradeStatus {
-    /** The value the customer may provide in order to retrieve it later. */
-    customComment: string;
-    /** Can be null */
-    message: string;
-    /** Unique order number */
-    order: number;
-    /** Price in base currency */
-    price: number;
-    /** Request status code, described below */
-    requestStatus: number;
-  }
+export interface TradeStatus {
+  /** The value the customer may provide in order to retrieve it later. */
+  customComment: string;
+  /** Can be null */
+  message: string;
+  /** Unique order number */
+  order: number;
+  /** Price in base currency */
+  price: number;
+  /** Request status code, described below */
+  requestStatus: number;
+}
 
-  export class ChartInfo {
-    /** Number of decimal places */
-    digits: number;
-    rateInfos: RateInfoRecord[];
-  }
+export interface ChartInfo {
+  /** Number of decimal places */
+  digits: number;
+  rateInfos: RateInfoRecord[];
+}
 
-  export class RateInfoRecord {
-    /** instrument symbol */
-    symbol: string;
-    /** Value of close price (shift from open price) */
-    close: number;
-    /** Candle start time in CET / CEST time zone (see Daylight Saving Time, DST) */
-    ctm: number;
-    /** String representation of the 'ctm' field */
-    ctmString: string;
-    /** Highest value in the given period (shift from open price) */
-    high: number;
-    /** Lowest value in the given period (shift from open price) */
-    low: number;
-    /** Open price (in base currency * 10 to the power of digits) */
-    open: number;
-    /** Volume in lots */
-    vol: number;
-  }
+export interface RateInfoRecord {
+  /** instrument symbol */
+  symbol: string;
+  /** Value of close price (shift from open price) */
+  close: number;
+  /** Candle start time in CET / CEST time zone (see Daylight Saving Time, DST) */
+  ctm: number;
+  /** String representation of the 'ctm' field */
+  ctmString: string;
+  /** Highest value in the given period (shift from open price) */
+  high: number;
+  /** Lowest value in the given period (shift from open price) */
+  low: number;
+  /** Open price (in base currency * 10 to the power of digits) */
+  open: number;
+  /** Volume in lots */
+  vol: number;
+}
 
-  export class Candle extends XApiClient.RateInfoRecord {
-    /** Source of price (only for streaming) */
-    quoteId?: XApiClient.QuoteId;
-  }
+export interface Candle extends RateInfoRecord {
+  /** Source of price (only for streaming) */
+  quoteId?: QuoteId;
+}
 
-  export class APIVersion {
-    /** version string */
-    version: string;
-  }
+export interface APIVersion {
+  /** version string */
+  version: string;
 }
