@@ -26,7 +26,7 @@ import {Constants} from './x_api_constants';
  *     streaming socket and then have the sockets identify if a new one must be
  *     opened
  */
-export class XApiClient {
+export class Client {
   isLoggedIn = false;
   #data: WeakMap<WebSocket, string>;
   #emitter: EventTarget2;
@@ -84,7 +84,7 @@ export class XApiClient {
     const chartInfo = (await this.callOperation(Constants.CHART_LAST_REQUEST, 'getCalendar', {
       info: {period: period, start: start.getTime(), symbol: symbol},
     })) as ChartInfo;
-    return XApiClient.processChartRequest(chartInfo, symbol);
+    return Client.processChartRequest(chartInfo, symbol);
   }
 
   /**
@@ -118,7 +118,7 @@ export class XApiClient {
         },
       }
     )) as ChartInfo;
-    return XApiClient.processChartRequest(chartInfo, symbol);
+    return Client.processChartRequest(chartInfo, symbol);
   }
 
   /**
