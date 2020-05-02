@@ -36,6 +36,16 @@ export class Client {
   #sockets: Map<string, WebSocket>;
   #streamSessionId: string;
   readonly #username: string;
+  static OPERATION_TYPES = [
+    'BUY',
+    'SELL',
+    'BUY_LIMIT',
+    'SELL_LIMIT',
+    'BUY_STOP',
+    'SELL_STOP',
+    'BALANCE',
+    'CREDIT',
+  ];
 
   constructor(username: string, password: string, isDemo: boolean) {
     this.#username = username;
